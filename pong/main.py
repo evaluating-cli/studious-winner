@@ -97,33 +97,32 @@ class GameState:
         self.score = [0, 0]
 
 
-def draw_menu(surface, width, height):
+def draw_menu(surface, width, height, font_obj, small_font_obj):
     surface.fill(BLACK)
-    title = font.render("PONG", True, WHITE)
+    title = font_obj.render("PONG", True, WHITE)
     surface.blit(title, (width // 2 - title.get_width() // 2, height // 4))
-    play_text = font.render("Play", True, WHITE)
+    play_text = font_obj.render("Play", True, WHITE)
     surface.blit(play_text, (width // 2 - play_text.get_width() // 2, height // 2))
-    options_text = small_font.render("Options  (O)", True, GRAY)
+    options_text = small_font_obj.render("Options  (O)", True, GRAY)
     surface.blit(options_text, (width // 2 - options_text.get_width() // 2, height // 2 + 70))
-    hint = small_font.render("ENTER - Play  |  O - Options", True, GRAY)
+    hint = small_font_obj.render("ENTER - Play  |  O - Options", True, GRAY)
     surface.blit(hint, (width // 2 - hint.get_width() // 2, height - 30))
 
 
-def draw_options(surface, width, height, opts):
+def draw_options(surface, width, height, opts, font_obj, small_font_obj):
     surface.fill(BLACK)
-    title = font.render("Options", True, WHITE)
+    title = font_obj.render("Options", True, WHITE)
     surface.blit(title, (width // 2 - title.get_width() // 2, height // 6))
     ws_label = "Widescreen:  " + ("ON " if opts.widescreen else "OFF")
     ws_color = WHITE if opts.widescreen else GRAY
-    ws_text = font.render(ws_label, True, ws_color)
+    ws_text = font_obj.render(ws_label, True, ws_color)
     surface.blit(ws_text, (width // 2 - ws_text.get_width() // 2, height // 2 - 24))
-    hint = small_font.render("ENTER - Toggle Widescreen  |  ESC - Back", True, GRAY)
+    hint = small_font_obj.render("ENTER - Toggle Widescreen  |  ESC - Back", True, GRAY)
     surface.blit(hint, (width // 2 - hint.get_width() // 2, height - 30))
 
 
 pygame.init()
 options = Options()
-screen = pygame.display.set_mode((options.width, HEIGHT))
 pygame.display.set_caption("Pong")
 clock = pygame.time.Clock()
 font = pygame.font.SysFont("monospace", 48)
@@ -131,10 +130,10 @@ small_font = pygame.font.SysFont("monospace", 20)
 
 
 async def main():
-    global screen
+    screen = pygame.display.set_mode((options.width, HEIGHT))
 
     phase = PHASE_MENU
-    state = GameState(options.width, HEIGHT)
+    state = None
 
     running = True
     while running:
@@ -159,10 +158,10 @@ async def main():
                         phase = PHASE_MENU
 
         if phase == PHASE_MENU:
-            draw_menu(screen, options.width, HEIGHT)
+            draw_menu(screen, options.width, HEIGHT, font, small_font)
 
         elif phase == PHASE_OPTIONS:
-            draw_options(screen, options.width, HEIGHT, options)
+            draw_options(screen, options.width, HEIGHT, options, font, small_font)
 
         elif phase == PHASE_PLAYING:
             screen.fill(BLACK)
