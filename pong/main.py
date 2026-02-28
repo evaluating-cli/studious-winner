@@ -3,19 +3,34 @@ import sys
 
 import pygame
 
-from .config import FPS, HEIGHT, WIDTH
-from .entities import GameState, Options
-from .systems import (
-    SPEED_OPTIONS,
-    WINNING_SCORE_OPTIONS,
-    draw_frame,
-    draw_options_screen,
-    draw_start_screen,
-    handle_input,
-    resolve_collisions,
-    update_physics,
-    update_scoring,
-)
+if __package__ in (None, ""):
+    from config import FPS, HEIGHT, WIDTH
+    from entities import GameState, Options
+    from systems import (
+        SPEED_OPTIONS,
+        WINNING_SCORE_OPTIONS,
+        draw_frame,
+        draw_options_screen,
+        draw_start_screen,
+        handle_input,
+        resolve_collisions,
+        update_physics,
+        update_scoring,
+    )
+else:
+    from .config import FPS, HEIGHT, WIDTH
+    from .entities import GameState, Options
+    from .systems import (
+        SPEED_OPTIONS,
+        WINNING_SCORE_OPTIONS,
+        draw_frame,
+        draw_options_screen,
+        draw_start_screen,
+        handle_input,
+        resolve_collisions,
+        update_physics,
+        update_scoring,
+    )
 
 
 async def run_start_screen(screen, clock, fonts):
@@ -30,6 +45,7 @@ async def run_start_screen(screen, clock, fonts):
                 if event.key == pygame.K_o:
                     return "options"
         draw_start_screen(screen, fonts)
+        pygame.display.flip()
         await asyncio.sleep(0)
 
 
@@ -59,10 +75,11 @@ async def run_options_screen(screen, clock, fonts, options):
                     if selected == 0:
                         options.winning_score = _cycle_option(WINNING_SCORE_OPTIONS, options.winning_score, delta)
                     elif selected == 1:
-                        options.ball_speed = _cycle_option(SPEED_OPTIONS, options.ball_speed, delta, 1)
+                        options.ball_speed_per_frame = _cycle_option(SPEED_OPTIONS, options.ball_speed_per_frame, delta, 1)
                     elif selected == 2:
-                        options.paddle_speed = _cycle_option(SPEED_OPTIONS, options.paddle_speed, delta, 1)
+                        options.paddle_speed_per_frame = _cycle_option(SPEED_OPTIONS, options.paddle_speed_per_frame, delta, 1)
         draw_options_screen(screen, fonts, options, selected)
+        pygame.display.flip()
         await asyncio.sleep(0)
     return True
 
@@ -73,7 +90,7 @@ async def run_game(screen, clock, fonts, options):
 
     running = True
     while running:
-        dt = clock.tick(FPS) / 1000.0
+        clock.tick(FPS)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -82,7 +99,7 @@ async def run_game(screen, clock, fonts, options):
         pressed_keys = pygame.key.get_pressed()
         handle_input(state, pressed_keys)
 
-        update_physics(state, dt)
+        update_physics(state)
         resolve_collisions(state)
         update_scoring(state)
 
@@ -94,6 +111,7 @@ async def run_game(screen, clock, fonts, options):
                 running = False
 
         draw_frame(screen, state, fonts)
+        pygame.display.flip()
         await asyncio.sleep(0)
 
 
@@ -124,6 +142,7 @@ async def main():
             _js_window.localStorage.removeItem("pong_play_requested")
             # Read winning score option set by the HTML overlay
             ws = _js_window.localStorage.getItem("pong_winning_score")
+            _js_window.localStorage.removeItem("pong_winning_score")
             if ws:
                 try:
                     val = int(ws)

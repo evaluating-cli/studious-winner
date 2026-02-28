@@ -3,10 +3,16 @@ import sys
 
 import pygame
 
-from .config import (
-    BLACK,
-    WHITE,
-)
+if __package__ in (None, ""):
+    from config import (
+        BLACK,
+        WHITE,
+    )
+else:
+    from .config import (
+        BLACK,
+        WHITE,
+    )
 
 WINNING_SCORE_OPTIONS = [3, 5, 7, 10]
 SPEED_OPTIONS = [3, 5, 7]
@@ -15,33 +21,33 @@ SPEED_LABELS = {3: "Slow", 5: "Normal", 7: "Fast"}
 
 def handle_input(state, pressed_keys):
     if pressed_keys[pygame.K_w]:
-        state.left_paddle.rect.y -= state.left_paddle.speed
+        state.left_paddle.rect.y -= state.left_paddle.speed_per_frame
     if pressed_keys[pygame.K_s]:
-        state.left_paddle.rect.y += state.left_paddle.speed
+        state.left_paddle.rect.y += state.left_paddle.speed_per_frame
 
     if pressed_keys[pygame.K_UP]:
-        state.right_paddle.rect.y -= state.right_paddle.speed
+        state.right_paddle.rect.y -= state.right_paddle.speed_per_frame
     if pressed_keys[pygame.K_DOWN]:
-        state.right_paddle.rect.y += state.right_paddle.speed
+        state.right_paddle.rect.y += state.right_paddle.speed_per_frame
 
     state.left_paddle.rect.y = max(0, min(state.left_paddle.rect.y, state.height - state.left_paddle.rect.height))
     state.right_paddle.rect.y = max(0, min(state.right_paddle.rect.y, state.height - state.right_paddle.rect.height))
 
 
-def update_physics(state, dt):  # dt intentionally unused to preserve frame-based behavior
-    state.ball.rect.x += state.ball.vx
-    state.ball.rect.y += state.ball.vy
+def update_physics(state):
+    state.ball.rect.x += state.ball.vx_per_frame
+    state.ball.rect.y += state.ball.vy_per_frame
     if state.ball.rect.top <= 0 or state.ball.rect.bottom >= state.height:
-        state.ball.vy = -state.ball.vy
+        state.ball.vy_per_frame = -state.ball.vy_per_frame
 
 
 def resolve_collisions(state):
-    if state.ball.rect.colliderect(state.left_paddle.rect) and state.ball.vx < 0:
+    if state.ball.rect.colliderect(state.left_paddle.rect) and state.ball.vx_per_frame < 0:
         state.ball.rect.left = state.left_paddle.rect.right
-        state.ball.vx = -state.ball.vx
-    if state.ball.rect.colliderect(state.right_paddle.rect) and state.ball.vx > 0:
+        state.ball.vx_per_frame = -state.ball.vx_per_frame
+    if state.ball.rect.colliderect(state.right_paddle.rect) and state.ball.vx_per_frame > 0:
         state.ball.rect.right = state.right_paddle.rect.left
-        state.ball.vx = -state.ball.vx
+        state.ball.vx_per_frame = -state.ball.vx_per_frame
 
 
 def update_scoring(state):
@@ -94,9 +100,6 @@ def draw_start_screen(screen, fonts):
         surf = small_font.render(line, True, debug_color)
         screen.blit(surf, (4, height - (len(debug_lines) - i) * debug_line_height))
 
-    pygame.display.flip()
-
-
 def draw_options_screen(screen, fonts, options, selected_index):
     font = fonts["font"]
     small_font = fonts["small_font"]
@@ -109,8 +112,8 @@ def draw_options_screen(screen, fonts, options, selected_index):
 
     items = [
         ("Winning Score", str(options.winning_score)),
-        ("Ball Speed", SPEED_LABELS.get(options.ball_speed, str(options.ball_speed))),
-        ("Paddle Speed", SPEED_LABELS.get(options.paddle_speed, str(options.paddle_speed))),
+        ("Ball Speed", SPEED_LABELS.get(options.ball_speed_per_frame, str(options.ball_speed_per_frame))),
+        ("Paddle Speed", SPEED_LABELS.get(options.paddle_speed_per_frame, str(options.paddle_speed_per_frame))),
     ]
 
     for i, (label, value) in enumerate(items):
@@ -121,9 +124,6 @@ def draw_options_screen(screen, fonts, options, selected_index):
 
     hint = small_font.render("UP/DOWN select   LEFT/RIGHT change   ESC confirm", True, (100, 100, 100))
     screen.blit(hint, (width // 2 - hint.get_width() // 2, height - 30))
-
-    pygame.display.flip()
-
 
 def draw_frame(screen, state, fonts):
     font = fonts["font"]
@@ -157,5 +157,3 @@ def draw_frame(screen, state, fonts):
 
     hint = small_font.render("W/S  vs  UP/DOWN", True, (150, 150, 150))
     screen.blit(hint, (width // 2 - hint.get_width() // 2, height - 25))
-
-    pygame.display.flip()
