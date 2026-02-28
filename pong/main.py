@@ -202,22 +202,19 @@ def _is_valid_display_size(width: int, height: int) -> bool:
 
 
 def _get_fullscreen_target_size(default_width: int, default_height: int) -> tuple[int, int]:
-    current_surface = pygame.display.get_surface()
-    if current_surface is not None:
-        current_width, current_height = current_surface.get_size()
-        if _is_valid_display_size(current_width, current_height):
-            return current_width, current_height
-
     get_desktop_sizes = getattr(pygame.display, "get_desktop_sizes", None)
     if callable(get_desktop_sizes):
         desktop_sizes = get_desktop_sizes()
-        for width, height in desktop_sizes:
-            if _is_valid_display_size(width, height):
-                return width, height
+        if desktop_sizes:
+            return desktop_sizes[0]
 
     info = pygame.display.Info()
-    if _is_valid_display_size(info.current_w, info.current_h):
+    if info.current_w > 0 and info.current_h > 0:
         return info.current_w, info.current_h
+
+    current_surface = pygame.display.get_surface()
+    if current_surface is not None:
+        return current_surface.get_size()
 
     return default_width, default_height
 
@@ -244,7 +241,6 @@ def apply_display_mode(options: Options, state: GameState | None = None):
     if state is not None:
         state.apply_display_size(active_width, active_height)
 
-    _sync_web_canvas_after_mode_switch(screen)
     return screen
 
 
