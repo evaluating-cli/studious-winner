@@ -6,16 +6,35 @@ import pygame
 if __package__ in (None, ""):
     from config import FPS, HEIGHT, WIDTH
     from entities import GameState, Options
-    from systems import draw_frame, draw_options_screen, draw_start_screen, handle_input, resolve_collisions, update_physics, update_scoring, WINNING_SCORE_OPTIONS, SPEED_OPTIONS
+    from systems import (
+        SPEED_OPTIONS,
+        WINNING_SCORE_OPTIONS,
+        draw_frame,
+        draw_options_screen,
+        draw_start_screen,
+        handle_input,
+        resolve_collisions,
+        update_physics,
+        update_scoring,
+    )
 else:
     from .config import FPS, HEIGHT, WIDTH
     from .entities import GameState, Options
-    from .systems import draw_frame, draw_options_screen, draw_start_screen, handle_input, resolve_collisions, update_physics, update_scoring, WINNING_SCORE_OPTIONS, SPEED_OPTIONS
+    from .systems import (
+        SPEED_OPTIONS,
+        WINNING_SCORE_OPTIONS,
+        draw_frame,
+        draw_options_screen,
+        draw_start_screen,
+        handle_input,
+        resolve_collisions,
+        update_physics,
+        update_scoring,
+    )
 
 
 async def run_start_screen(screen, clock, fonts):
-    waiting = True
-    while waiting:
+    while True:
         clock.tick(FPS)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -27,7 +46,11 @@ async def run_start_screen(screen, clock, fonts):
                     return "options"
         draw_start_screen(screen, fonts)
         await asyncio.sleep(0)
-    return "start"
+
+
+def _cycle_option(options_list, current, delta, default_idx=0):
+    idx = options_list.index(current) if current in options_list else default_idx
+    return options_list[(idx + delta) % len(options_list)]
 
 
 async def run_options_screen(screen, clock, fonts, options):
@@ -46,26 +69,20 @@ async def run_options_screen(screen, clock, fonts, options):
                     selected = (selected - 1) % num_items
                 elif event.key == pygame.K_DOWN:
                     selected = (selected + 1) % num_items
-                elif event.key == pygame.K_LEFT:
+                elif event.key in (pygame.K_LEFT, pygame.K_RIGHT):
+                    delta = -1 if event.key == pygame.K_LEFT else 1
                     if selected == 0:
-                        idx = WINNING_SCORE_OPTIONS.index(options.winning_score) if options.winning_score in WINNING_SCORE_OPTIONS else 0
-                        options.winning_score = WINNING_SCORE_OPTIONS[(idx - 1) % len(WINNING_SCORE_OPTIONS)]
+                        options.winning_score = _cycle_option(
+                            WINNING_SCORE_OPTIONS, options.winning_score, delta
+                        )
                     elif selected == 1:
-                        idx = SPEED_OPTIONS.index(options.ball_speed) if options.ball_speed in SPEED_OPTIONS else 1
-                        options.ball_speed = SPEED_OPTIONS[(idx - 1) % len(SPEED_OPTIONS)]
+                        options.ball_speed = _cycle_option(
+                            SPEED_OPTIONS, options.ball_speed, delta, 1
+                        )
                     elif selected == 2:
-                        idx = SPEED_OPTIONS.index(options.paddle_speed) if options.paddle_speed in SPEED_OPTIONS else 1
-                        options.paddle_speed = SPEED_OPTIONS[(idx - 1) % len(SPEED_OPTIONS)]
-                elif event.key == pygame.K_RIGHT:
-                    if selected == 0:
-                        idx = WINNING_SCORE_OPTIONS.index(options.winning_score) if options.winning_score in WINNING_SCORE_OPTIONS else 0
-                        options.winning_score = WINNING_SCORE_OPTIONS[(idx + 1) % len(WINNING_SCORE_OPTIONS)]
-                    elif selected == 1:
-                        idx = SPEED_OPTIONS.index(options.ball_speed) if options.ball_speed in SPEED_OPTIONS else 1
-                        options.ball_speed = SPEED_OPTIONS[(idx + 1) % len(SPEED_OPTIONS)]
-                    elif selected == 2:
-                        idx = SPEED_OPTIONS.index(options.paddle_speed) if options.paddle_speed in SPEED_OPTIONS else 1
-                        options.paddle_speed = SPEED_OPTIONS[(idx + 1) % len(SPEED_OPTIONS)]
+                        options.paddle_speed = _cycle_option(
+                            SPEED_OPTIONS, options.paddle_speed, delta, 1
+                        )
         draw_options_screen(screen, fonts, options, selected)
         await asyncio.sleep(0)
     return True
@@ -90,7 +107,8 @@ async def run_game(screen, clock, fonts, options):
         resolve_collisions(state)
         update_scoring(state)
 
-        if (state.score[0] >= state.winning_score or state.score[1] >= state.winning_score) and pressed_keys[pygame.K_r]:
+        game_over = state.score[0] >= state.winning_score or state.score[1] >= state.winning_score
+        if game_over and pressed_keys[pygame.K_r]:
             state.reset()
 
         draw_frame(screen, state, fonts)

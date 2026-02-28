@@ -88,7 +88,9 @@ class GameState:
         self.winning_score = self.options.winning_score
         paddle_start_y = self.height // 2 - PADDLE_HEIGHT // 2
         self.left_paddle = Paddle(LEFT_PADDLE_X, paddle_start_y, self.options.paddle_speed)
-        self.right_paddle = Paddle(self.width - PADDLE_WIDTH - LEFT_PADDLE_X, paddle_start_y, self.options.paddle_speed)
+        self.right_paddle = Paddle(
+            self.width - PADDLE_WIDTH - LEFT_PADDLE_X, paddle_start_y, self.options.paddle_speed
+        )
         self.ball = Ball(self.width, self.height, self.options.ball_speed)
 
     def reset(self):
