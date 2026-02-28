@@ -1,20 +1,43 @@
 import asyncio
 import pygame
 
-# Constants
-WIDTH, HEIGHT = 640, 480
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-PADDLE_WIDTH, PADDLE_HEIGHT = 10, 80
-BALL_SIZE = 15
-FPS = 60
-WINNING_SCORE = 7
+from config import (
+    BALL_SIZE,
+    BALL_SPEED_X_TUNED,
+    BALL_SPEED_Y_TUNED,
+    BLACK,
+    CENTER_DASH_LENGTH,
+    CENTER_LINE_WIDTH,
+    CONTROLS_HINT_TEXT,
+    FONT_NAME,
+    FPS,
+    HEIGHT,
+    HINT_BOTTOM_MARGIN,
+    HINT_COLOR,
+    LEFT_WIN_TEXT,
+    PADDLE_HEIGHT,
+    PADDLE_LEFT_X,
+    PADDLE_RIGHT_MARGIN,
+    PADDLE_SPEED_TUNED,
+    PADDLE_WIDTH,
+    RESTART_TEXT,
+    RESTART_TEXT_OFFSET_Y,
+    RIGHT_WIN_TEXT,
+    SCORE_FONT_SIZE,
+    SCORE_TOP_MARGIN,
+    SMALL_FONT_SIZE,
+    WHITE,
+    WIDTH,
+    WINNER_TEXT_OFFSET_Y,
+    WINNING_SCORE,
+    WINDOW_CAPTION,
+)
 
 
 class Paddle:
     def __init__(self, x, y):
         self.rect = pygame.Rect(x, y, PADDLE_WIDTH, PADDLE_HEIGHT)
-        self.speed = 6
+        self.speed = PADDLE_SPEED_TUNED
 
     def move(self, up_key, down_key):
         keys = pygame.key.get_pressed()
@@ -39,8 +62,8 @@ class Ball:
             BALL_SIZE,
             BALL_SIZE,
         )
-        self.vx = 5
-        self.vy = 5
+        self.vx = BALL_SPEED_X_TUNED
+        self.vy = BALL_SPEED_Y_TUNED
 
     def move(self):
         self.rect.x += self.vx
@@ -52,7 +75,7 @@ class Ball:
         pygame.draw.rect(surface, WHITE, self.rect)
 
 
-def draw_dashed_line(surface, color, start, end, dash_length=10):
+def draw_dashed_line(surface, color, start, end, dash_length=CENTER_DASH_LENGTH):
     x1, y1 = start
     x2, y2 = end
     dy = y2 - y1
@@ -60,29 +83,35 @@ def draw_dashed_line(surface, color, start, end, dash_length=10):
     for i in range(dashes):
         start_y = y1 + i * dash_length * 2
         end_y = start_y + dash_length
-        pygame.draw.line(surface, color, (x1, start_y), (x2, end_y), 2)
+        pygame.draw.line(surface, color, (x1, start_y), (x2, end_y), CENTER_LINE_WIDTH)
 
 
 class GameState:
     def __init__(self):
-        self.left_paddle = Paddle(20, HEIGHT // 2 - PADDLE_HEIGHT // 2)
-        self.right_paddle = Paddle(WIDTH - 30, HEIGHT // 2 - PADDLE_HEIGHT // 2)
+        self.left_paddle = Paddle(PADDLE_LEFT_X, HEIGHT // 2 - PADDLE_HEIGHT // 2)
+        self.right_paddle = Paddle(
+            WIDTH - PADDLE_RIGHT_MARGIN,
+            HEIGHT // 2 - PADDLE_HEIGHT // 2,
+        )
         self.ball = Ball()
         self.score = [0, 0]
 
     def reset(self):
-        self.left_paddle = Paddle(20, HEIGHT // 2 - PADDLE_HEIGHT // 2)
-        self.right_paddle = Paddle(WIDTH - 30, HEIGHT // 2 - PADDLE_HEIGHT // 2)
+        self.left_paddle = Paddle(PADDLE_LEFT_X, HEIGHT // 2 - PADDLE_HEIGHT // 2)
+        self.right_paddle = Paddle(
+            WIDTH - PADDLE_RIGHT_MARGIN,
+            HEIGHT // 2 - PADDLE_HEIGHT // 2,
+        )
         self.ball.reset()
         self.score = [0, 0]
 
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Pong")
+pygame.display.set_caption(WINDOW_CAPTION)
 clock = pygame.time.Clock()
-font = pygame.font.SysFont("monospace", 48)
-small_font = pygame.font.SysFont("monospace", 20)
+font = pygame.font.SysFont(FONT_NAME, SCORE_FONT_SIZE)
+small_font = pygame.font.SysFont(FONT_NAME, SMALL_FONT_SIZE)
 
 
 async def main():
@@ -128,28 +157,43 @@ async def main():
         # Draw scores
         left_score = font.render(str(state.score[0]), True, WHITE)
         right_score = font.render(str(state.score[1]), True, WHITE)
-        screen.blit(left_score, (WIDTH // 4 - left_score.get_width() // 2, 20))
-        screen.blit(right_score, (3 * WIDTH // 4 - right_score.get_width() // 2, 20))
+        screen.blit(left_score, (WIDTH // 4 - left_score.get_width() // 2, SCORE_TOP_MARGIN))
+        screen.blit(
+            right_score,
+            (3 * WIDTH // 4 - right_score.get_width() // 2, SCORE_TOP_MARGIN),
+        )
 
         # Win condition
         winner = None
         if state.score[0] >= WINNING_SCORE:
-            winner = "Left Player Wins!"
+            winner = LEFT_WIN_TEXT
         elif state.score[1] >= WINNING_SCORE:
-            winner = "Right Player Wins!"
+            winner = RIGHT_WIN_TEXT
 
         if winner:
             msg = font.render(winner, True, WHITE)
-            screen.blit(msg, (WIDTH // 2 - msg.get_width() // 2, HEIGHT // 2 - 40))
-            restart = small_font.render("Press R to restart", True, WHITE)
-            screen.blit(restart, (WIDTH // 2 - restart.get_width() // 2, HEIGHT // 2 + 20))
+            screen.blit(
+                msg,
+                (
+                    WIDTH // 2 - msg.get_width() // 2,
+                    HEIGHT // 2 + WINNER_TEXT_OFFSET_Y,
+                ),
+            )
+            restart = small_font.render(RESTART_TEXT, True, WHITE)
+            screen.blit(
+                restart,
+                (
+                    WIDTH // 2 - restart.get_width() // 2,
+                    HEIGHT // 2 + RESTART_TEXT_OFFSET_Y,
+                ),
+            )
             keys = pygame.key.get_pressed()
             if keys[pygame.K_r]:
                 state.reset()
 
         # Controls hint
-        hint = small_font.render("W/S  vs  UP/DOWN", True, (150, 150, 150))
-        screen.blit(hint, (WIDTH // 2 - hint.get_width() // 2, HEIGHT - 25))
+        hint = small_font.render(CONTROLS_HINT_TEXT, True, HINT_COLOR)
+        screen.blit(hint, (WIDTH // 2 - hint.get_width() // 2, HEIGHT - HINT_BOTTOM_MARGIN))
 
         pygame.display.flip()
         clock.tick(FPS)
