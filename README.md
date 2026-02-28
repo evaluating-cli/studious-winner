@@ -4,7 +4,7 @@ A two-player Pong game built with Python and Pygame, compiled for the web using 
 
 ## Play
 
-The game is live on GitHub Pages — play it here: **https://evaluating-cli.github.io/studious-winner/**
+The game has a **live demo** on GitHub Pages — play it here: **https://evaluating-cli.github.io/studious-winner/**
 
 ## Controls
 
@@ -17,7 +17,7 @@ First player to reach **7 points** wins. Press **R** to restart after a game end
 
 ## Deployment
 
-Every push to the `main` branch automatically triggers the [Deploy Pong to GitHub Pages](.github/workflows/deploy.yml) GitHub Actions workflow. No manual build or deploy step is needed.
+Every push to the `main` branch uses an **auto-deploy** GitHub Actions workflow: [Deploy Pong to GitHub Pages](.github/workflows/deploy.yml). There is **no manual build** or deploy step needed.
 
 The workflow runs the following steps:
 
