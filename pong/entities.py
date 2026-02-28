@@ -19,7 +19,7 @@ from .config import (
 class Options:
     winning_score: int = WINNING_SCORE
     ball_speed: int = BALL_SPEED_X
-    paddle_speed: int = 5
+    paddle_speed: int = PADDLE_SPEED
 
 
 @dataclass

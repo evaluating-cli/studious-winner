@@ -61,7 +61,7 @@ async def run_options_screen(screen, clock, fonts, options):
                     elif selected == 1:
                         options.ball_speed = _cycle_option(SPEED_OPTIONS, options.ball_speed, delta, 1)
                     elif selected == 2:
-                        options.paddle_speed = _cycle_option(SPEED_OPTIONS, options.paddle_speed, delta, 1)
+                        options.paddle_speed = _cycle_option(SPEED_OPTIONS, options.paddle_speed, delta)
         draw_options_screen(screen, fonts, options, selected)
         await asyncio.sleep(0)
     return True
