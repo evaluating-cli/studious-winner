@@ -1,0 +1,422 @@
+<html lang="en-us"><script src="{{cookiecutter.cdn}}pythons.js" type=module id="site" data-python="python{{cookiecutter.PYBUILD}}" data-LINES=42 data-COLUMNS=132 data-os="vtx,snd,gui" async defer>#<!--
+
+print("""
+Loading {{cookiecutter.title}} from {{cookiecutter.archive}}.apk
+    Pygbag Version : {{cookiecutter.version}}
+    Template Version : 0.9.3
+    Python  : {{cookiecutter.PYBUILD}}
+    CDN URL : {{cookiecutter.cdn}}
+    Screen  : {{cookiecutter.width}}x{{cookiecutter.height}}
+    Title   : {{cookiecutter.title}}
+    Folder  : {{cookiecutter.directory}}
+    Authors : {{cookiecutter.authors}}
+    SPDX-License-Identifier: {{cookiecutter.spdx}}
+
+""")
+
+import sys
+import asyncio
+import platform
+import json
+from pathlib import Path
+
+# do not rename
+async def custom_site():
+    import embed
+
+    platform.window.transfer.hidden = true
+    platform.window.canvas.style.visibility = "visible"
+
+    bundle = "{{cookiecutter.archive}}"
+
+    # the C or js loader could do that but be explicit.
+    appdir = Path(f"/data/data/{bundle}") # /data/data/{{cookiecutter.archive}}
+    appdir.mkdir()
+
+    # unpack filesystem from compressed archive into work dir
+    if platform.window.location.host.find('.itch.zone')>0:
+        import zipfile
+        async with platform.fopen("{{cookiecutter.archive}}.apk", "rb") as archive:
+            with zipfile.ZipFile(archive) as zip_ref:
+                zip_ref.extractall(appdir.as_posix())
+    else:
+        import tarfile
+        async with platform.fopen("{{cookiecutter.archive}}.tar.gz", "rb") as archive:
+            tar = tarfile.open(fileobj=archive, mode="r:gz")
+            tar.extractall(path=appdir.as_posix(), filter='tar')
+            tar.close()
+
+    # preloader will change to work dir and prepend it to sys.path
+    platform.run_main(PyConfig, loaderhome= appdir / "assets", loadermain=None)
+
+    # wait preloading complete : that includes images and wasm compilation of bundled modules
+    while embed.counter()<0:
+        await asyncio.sleep(.1)
+
+    main = appdir / "assets" / "main.py"
+
+    # test/wait user media interaction
+    if not platform.window.MM.UME:
+        __import__(__name__).__file__ = main
+        msg  = "Ready to start ! Please click/touch page"
+        platform.window.infobox.innerText = msg
+        print("\n"*4, f"    * Waiting for media user engagement. {msg} *" , "\n"*4)
+        while not platform.window.MM.UME:
+            await asyncio.sleep(.1)
+
+    # start async top level machinery
+    await TopLevel_async_handler.start_toplevel(platform.shell, console=window.python.config.debug)
+
+    __import__(__name__).__file__ = main
+
+    def ui_callback(pkg):
+        platform.window.infobox.innerText = f"installing {pkg}"
+
+    await shell.source(main, callback=ui_callback)
+
+    platform.window.infobox.style.display = "none"
+    platform.window.config.gui_divider = 1
+    platform.window.window_resize()
+
+    shell.interactive()
+
+asyncio.run( custom_site() )
+
+
+# BEGIN BLOCK
+#
+# now this is the html part you can (and should) customize
+# It is not mandatory : pygame-script when it reads the first line (also called
+# shebang ) of above code create absolute minimal widget set
+# required for running with default rules
+#
+# do not alter that comment block it is separating python code from html code
+# =============================================================================
+# --></script><head><!--
+//=============================================================================
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{cookiecutter.title}}</title>
+
+<script type="application/javascript">
+// END BLOCK
+
+config = {
+    xtermjs : "{{cookiecutter.xtermjs}}" ,
+    _sdl2 : "canvas",
+    user_canvas : 0,
+    user_canvas_managed : 0,
+    gui_divider : 1,
+    ume_block : {{cookiecutter.ume_block}},
+    can_close : {{cookiecutter.can_close}},
+    archive : "{{cookiecutter.archive}}",
+    gui_debug : 2,
+    cdn : "{{cookiecutter.cdn}}",
+    autorun : {{cookiecutter.autorun}},
+    PYBUILD : "{{cookiecutter.PYBUILD}}",
+    fb_ar   :  1.77,
+    fb_width : "{{cookiecutter.width}}",
+    fb_height : "{{cookiecutter.height}}"
+}
+
+function show_infobox() {
+    infobox.style.display = "block";
+    const w = infobox.offsetWidth;
+    const h = infobox.offsetHeight;
+    const left = (window.innerWidth - w) / 2;
+    const top = (window.innerHeight - h) / 2;
+    infobox.style.left = left + "px";
+    infobox.style.top = top + "px";
+}
+
+async function custom_onload(debug_hidden) {
+    console.log(__FILE__, "custom_onload")
+    pyconsole.hidden = true
+    system.hidden = true
+    transfer.hidden = true
+    info.hidden = true
+    box.hidden = true
+    show_infobox()
+}
+
+function custom_prerun(){
+    console.log(__FILE__, "custom_prerun")
+}
+
+function custom_postrun(){
+    console.log(__FILE__, "custom_postrun")
+}
+
+function debug() {
+    python.config.debug = true
+    custom_onload(false)
+    Module.PyRun_SimpleString("shell.uptime()")
+    window_resize()
+}
+
+function info_inline(data){
+    document.getElementById("info").innerHTML = data
+}
+
+function info_online(url) {
+    fetch(url)
+        .then((response) => response.text())
+        .then((html) => { info_inline(html); })
+        .catch((error) => { console.warn(error); });
+}
+
+function frame_online(url) {
+    window.frames["iframe"].location = url;
+}
+</script>
+
+<style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        background: #000;
+        color: #fff;
+        font-family: "Courier New", Courier, monospace;
+        overflow: hidden;
+    }
+
+    /* Game canvas fills the entire viewport, loaded in the background */
+    canvas.emscripten {
+        position: fixed;
+        inset: 0;
+        width: 100% !important;
+        height: 100% !important;
+        display: block;
+    }
+
+    /* Startup overlay sits on top of the canvas */
+    #overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2rem;
+        padding: 2rem;
+        background: #000;
+        transition: opacity 0.3s ease;
+    }
+
+    #overlay.fade-out {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .title {
+        font-size: clamp(3rem, 10vw, 6rem);
+        font-weight: bold;
+        letter-spacing: 0.2em;
+        text-align: center;
+    }
+
+    .divider {
+        width: min(400px, 80vw);
+        border: none;
+        border-top: 2px solid #fff;
+    }
+
+    .controls {
+        width: min(400px, 80vw);
+        text-align: center;
+    }
+
+    .controls h2 {
+        font-size: 0.9rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+        opacity: 0.7;
+    }
+
+    .controls table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 0.85rem;
+    }
+
+    .controls th,
+    .controls td {
+        padding: 0.35rem 0.75rem;
+        text-align: center;
+    }
+
+    .controls th {
+        opacity: 0.6;
+        font-weight: normal;
+        border-bottom: 1px solid rgba(255,255,255,0.3);
+    }
+
+    #play-btn {
+        margin-top: 0.5rem;
+        padding: 1rem 3rem;
+        background: #fff;
+        color: #000;
+        border: none;
+        font-family: inherit;
+        font-size: 1.2rem;
+        font-weight: bold;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s, transform 0.1s;
+    }
+
+    #play-btn:hover { background: #ddd; }
+    #play-btn:active { transform: scale(0.97); }
+
+    .hint {
+        font-size: 0.75rem;
+        opacity: 0.45;
+        letter-spacing: 0.1em;
+    }
+
+    /* Loading status shown inside the overlay */
+    #infobox {
+        font-size: 0.7rem;
+        opacity: 0.4;
+        letter-spacing: 0.08em;
+        font-family: "Courier New", Courier, monospace;
+        text-align: center;
+    }
+
+    /* Hide pygbag debug/transfer elements */
+    #transfer, #pyconsole, #crt { display: none !important; }
+</style>
+
+<script src="{{cookiecutter.cdn}}/browserfs.min.js"></script>
+
+</head>
+
+<body>
+
+    <!-- Startup overlay: visible on top while the game loads in the background -->
+    <div id="overlay">
+        <div class="title">PONG</div>
+
+        <hr class="divider">
+
+        <div class="controls">
+            <h2>Controls</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Move Up</th>
+                        <th>Move Down</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Left</td>
+                        <td>W</td>
+                        <td>S</td>
+                    </tr>
+                    <tr>
+                        <td>Right</td>
+                        <td>↑</td>
+                        <td>↓</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <button id="play-btn">▶ PLAY</button>
+
+        <p class="hint">First to 7 points wins &nbsp;·&nbsp; Press R to restart</p>
+
+        <!-- Infobox is repurposed as a subtle loading hint inside the overlay -->
+        <div id="infobox">Loading…</div>
+    </div>
+
+    <!-- Required pygbag elements -->
+    <div id="transfer" align=center hidden>
+        <div class="emscripten" id="status">Downloading...</div>
+        <div class="emscripten">
+            <progress value="0" max="100" id="progress"></progress>
+        </div>
+    </div>
+
+    <canvas class="emscripten" id="canvas"
+        width="1px" height="1px"
+        oncontextmenu="event.preventDefault()" tabindex=1>
+    </canvas>
+
+    <canvas class="emscripten" id="canvas3d"
+        width="{{cookiecutter.width}}px" height="{{cookiecutter.height}}px"
+        oncontextmenu="event.preventDefault()" tabindex=1 hidden>
+    </canvas>
+
+    <div id=html></div>
+
+    <div id=crt class=bottomright>
+        <div id="system" hidden>
+            <div class="button-container">
+                <button id="aiostop" disabled>AIO ⏏︎</button>
+                <button id="aiopaused_true" disabled>AIO ■</button>
+                <button id="aiopaused_false" disabled>AIO ▶</button>
+                <button id="pygame_mixer_music_pause" disabled>Music ■</button>
+            </div>
+            <div class="button-container">
+                <div id=load_min>min</div>
+                <div id=load_avg>avg</div>
+                <div id=load_max>max</div>
+                <button id="load_rst" disabled>RESET</button>
+            </div>
+            <div id="level">(battery level unknown)</div>
+            <div id="stateBattery">(charging state unknown)</div>
+        </div>
+
+        <div id=box class="emscripten_border" hidden=true>
+            <div id="info" class="trinfo"></div>
+            <iframe id="iframe" name="iframe"
+                width="470px" height="90%"
+                allowtransparency="true"
+                frameborder="1"
+                allowfullscreen="true"
+                webkitallowfullscreen="true"
+                msallowfullscreen="true"
+                mozallowfullscreen="true"
+                sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
+                allow="autoplay; fullscreen *; geolocation; microphone; camera; midi; monetization; xr-spatial-tracking; gamepad; gyroscope; accelerometer; xr; cross-origin-isolated"
+                src="{{cookiecutter.cdn}}empty.html"
+                scrolling="yes">
+            </iframe>
+        </div>
+    </div>
+
+    <div id="dlg" hidden>
+        <input type="file" id="dlg_multifile" multiple accept="image/*">
+        <label for="dlg_multifile">Select files</label>
+    </div>
+
+    <div id="pyconsole">
+        <div id="terminal" tabIndex=1 align="left"></div>
+    </div>
+
+    <script type="application/javascript">
+
+    globalThis.__canvas_resized = (self, ecw, ech) => {
+        console.warn("TODO: panda3d canvas monitor", self, ecw, ech)
+    }
+
+    document.getElementById('play-btn').addEventListener('click', function () {
+        const overlay = document.getElementById('overlay');
+        overlay.classList.add('fade-out');
+        overlay.addEventListener('transitionend', function () {
+            overlay.style.display = 'none';
+            document.getElementById('canvas').focus();
+        }, { once: true });
+    });
+
+    </script>
+
+</body>
+</html>
