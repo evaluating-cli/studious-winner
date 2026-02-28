@@ -70,6 +70,21 @@ def draw_dashed_line(surface, color, start, end, dash_length=10):
         pygame.draw.line(surface, color, (x1, start_y), (x2, end_y), 2)
 
 
+def draw_start_screen(screen, fonts):
+    font = fonts["font"]
+    small_font = fonts["small_font"]
+
+    screen.fill(BLACK)
+
+    title = font.render("PONG", True, WHITE)
+    start = small_font.render("Press ENTER to start", True, WHITE)
+
+    screen.blit(title, (WIDTH // 2 - title.get_width() // 2, HEIGHT // 2 - 60))
+    screen.blit(start, (WIDTH // 2 - start.get_width() // 2, HEIGHT // 2 + 20))
+
+    pygame.display.flip()
+
+
 def draw_frame(screen, state, fonts):
     font = fonts["font"]
     small_font = fonts["small_font"]
