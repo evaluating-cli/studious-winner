@@ -31,7 +31,7 @@ jobs:
         run: python -m pip install pygbag
 
       - name: Build Pong with pygbag
-        run: python -m pygbag --build pong
+        run: python -m pygbag --build --ume_block 0 --width 640 --height 480 pong
 
       - name: Add .nojekyll
         run: touch pong/build/web/.nojekyll
