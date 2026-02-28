@@ -2,19 +2,34 @@ from dataclasses import dataclass, field
 
 import pygame
 
-from pong.config import (
-    BALL_SIZE,
-    BALL_SPEED_X,
-    BALL_SPEED_Y,
-    HEIGHT,
-    LEFT_PADDLE_X,
-    PADDLE_HEIGHT,
-    PADDLE_SPEED,
-    PADDLE_START_Y,
-    PADDLE_WIDTH,
-    RIGHT_PADDLE_X,
-    WIDTH,
-)
+if __package__ in (None, ""):
+    from config import (
+        BALL_SIZE,
+        BALL_SPEED_X,
+        BALL_SPEED_Y,
+        HEIGHT,
+        LEFT_PADDLE_X,
+        PADDLE_HEIGHT,
+        PADDLE_SPEED,
+        PADDLE_START_Y,
+        PADDLE_WIDTH,
+        RIGHT_PADDLE_X,
+        WIDTH,
+    )
+else:
+    from .config import (
+        BALL_SIZE,
+        BALL_SPEED_X,
+        BALL_SPEED_Y,
+        HEIGHT,
+        LEFT_PADDLE_X,
+        PADDLE_HEIGHT,
+        PADDLE_SPEED,
+        PADDLE_START_Y,
+        PADDLE_WIDTH,
+        RIGHT_PADDLE_X,
+        WIDTH,
+    )
 
 
 @dataclass

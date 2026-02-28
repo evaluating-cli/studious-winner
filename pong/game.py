@@ -2,9 +2,14 @@ import asyncio
 
 import pygame
 
-from pong.config import FPS, HEIGHT, WIDTH, WINNING_SCORE
-from pong.entities import GameState
-from pong.systems import draw_frame, handle_input, resolve_collisions, update_physics, update_scoring
+if __package__ in (None, ""):
+    from config import FPS, HEIGHT, WIDTH, WINNING_SCORE
+    from entities import GameState
+    from systems import draw_frame, handle_input, resolve_collisions, update_physics, update_scoring
+else:
+    from .config import FPS, HEIGHT, WIDTH, WINNING_SCORE
+    from .entities import GameState
+    from .systems import draw_frame, handle_input, resolve_collisions, update_physics, update_scoring
 
 
 async def run_game(screen, clock, fonts):

@@ -1,12 +1,21 @@
 import pygame
 
-from pong.config import (
-    BLACK,
-    HEIGHT,
-    WHITE,
-    WIDTH,
-    WINNING_SCORE,
-)
+if __package__ in (None, ""):
+    from config import (
+        BLACK,
+        HEIGHT,
+        WHITE,
+        WIDTH,
+        WINNING_SCORE,
+    )
+else:
+    from .config import (
+        BLACK,
+        HEIGHT,
+        WHITE,
+        WIDTH,
+        WINNING_SCORE,
+    )
 
 
 def handle_input(state, pressed_keys):
