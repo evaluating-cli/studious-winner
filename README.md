@@ -4,7 +4,7 @@ A two-player Pong game built with Python and Pygame, compiled for the web using 
 
 ## Play
 
-The game is deployed to GitHub Pages. Open the Pages URL for this repository to play it in your browser.
+The game is live on GitHub Pages — play it here: **https://evaluating-cli.github.io/studious-winner/**
 
 ## Controls
 
@@ -15,23 +15,16 @@ The game is deployed to GitHub Pages. Open the Pages URL for this repository to 
 
 First player to reach **7 points** wins. Press **R** to restart after a game ends.
 
-## Run locally
-
-```bash
-pip install pygame
-cd pong
-python main.py
-```
-
-## Build for web
-
-```bash
-pip install pygbag
-python -m pygbag --build pong
-```
-
-The built output is written to `pong/build/web/`.
-
 ## Deployment
 
-Pushing to `main` triggers the [GitHub Actions workflow](.github/workflows/deploy.yml), which builds the project with pygbag and deploys the result to the `gh-pages` branch.
+Every push to the `main` branch automatically triggers the [Deploy Pong to GitHub Pages](.github/workflows/deploy.yml) GitHub Actions workflow. No manual build or deploy step is needed.
+
+The workflow runs the following steps:
+
+1. **Checkout** – checks out the repository code.
+2. **Set up Python** – installs Python 3.11.
+3. **Install pygbag** – runs `pip install pygbag` to install the web-build tool.
+4. **Build with pygbag** – compiles the Pygame app to WebAssembly via `python -m pygbag --build pong`. The output is written to `pong/build/web/`.
+5. **Add .nojekyll** – adds a `.nojekyll` file so GitHub Pages serves the files as-is.
+6. **Upload artifact** – packages the `pong/build/web/` directory as a Pages artifact.
+7. **Deploy** – publishes the artifact to GitHub Pages, making the game available at https://evaluating-cli.github.io/studious-winner/.
