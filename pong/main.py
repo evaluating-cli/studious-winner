@@ -195,6 +195,83 @@ def apply_display_mode(options: Options, state: GameState | None = None):
     _sync_web_canvas_after_mode_switch(screen)
     return screen
 
+    def apply_display_size(self, width: int, height: int):
+        self.width = width
+        self.height = height
+
+        paddle_start_y = self.height // 2 - PADDLE_HEIGHT // 2
+        self.left_paddle.y = paddle_start_y
+        self.right_paddle.y = paddle_start_y
+        self.right_paddle.x = self.width - 30
+        self.right_paddle.rect.x = self.right_paddle.x
+
+        self.left_paddle.rect.y = max(0, min(self.left_paddle.rect.y, self.height - self.left_paddle.rect.height))
+        self.right_paddle.rect.y = max(0, min(self.right_paddle.rect.y, self.height - self.right_paddle.rect.height))
+
+        self.ball.width = self.width
+        self.ball.height = self.height
+        self.ball.rect.clamp_ip(pygame.Rect(0, 0, self.width, self.height))
+
+
+def _sync_web_canvas_after_mode_switch(screen):
+    """Keep pygbag canvas size in sync after pygame.display.set_mode()."""
+    if sys.platform != "emscripten":
+        return
+
+    resize_hook = getattr(pygame.display, "_resize_event", None)
+    if callable(resize_hook):
+        resize_hook()
+    else:
+        # Fallback for environments without a bridge hook.
+        screen.fill(BLACK)
+        pygame.display.flip()
+
+
+def _is_valid_display_size(width: int, height: int) -> bool:
+    return width > 0 and height > 0
+
+
+def _get_fullscreen_target_size(default_width: int, default_height: int) -> tuple[int, int]:
+    current_surface = pygame.display.get_surface()
+    if current_surface is not None:
+        current_width, current_height = current_surface.get_size()
+        if _is_valid_display_size(current_width, current_height):
+            return current_width, current_height
+
+    get_desktop_sizes = getattr(pygame.display, "get_desktop_sizes", None)
+    if callable(get_desktop_sizes):
+        desktop_sizes = get_desktop_sizes()
+        for width, height in desktop_sizes:
+            if _is_valid_display_size(width, height):
+                return width, height
+
+    info = pygame.display.Info()
+    if _is_valid_display_size(info.current_w, info.current_h):
+        return info.current_w, info.current_h
+
+    return default_width, default_height
+
+
+def apply_display_mode(options: Options, state: GameState | None = None):
+    if options.fullscreen:
+        target_width, target_height = _get_fullscreen_target_size(options.width, HEIGHT)
+        flags = pygame.RESIZABLE
+    else:
+        target_width, target_height = options.width, HEIGHT
+        flags = 0
+
+    if not _is_valid_display_size(target_width, target_height):
+        target_width, target_height = options.width, HEIGHT
+
+    screen = pygame.display.set_mode((target_width, target_height), flags)
+    active_width, active_height = screen.get_size()
+
+    if state is not None:
+        state.apply_display_size(active_width, active_height)
+
+    _sync_web_canvas_after_mode_switch(screen)
+    return screen
+
 
 def draw_dashed_line(surface, color, start, end, dash_length=10):
     x1, y1 = start
