@@ -94,6 +94,9 @@ class Ball:
 
 @dataclass
 class GameState:
+    PLAYING = "playing"
+    GAME_OVER = "game_over"
+
     width: int
     height: int
     left_paddle: Paddle = field(init=False)
@@ -106,6 +109,15 @@ class GameState:
         self.left_paddle = Paddle(20, paddle_start_y)
         self.right_paddle = Paddle(self.width - 30, paddle_start_y)
         self.ball = Ball(self.width, self.height)
+        self.phase = self.PLAYING
+
+    @property
+    def winner(self):
+        if self.score[0] >= WINNING_SCORE:
+            return "Left Player Wins!"
+        if self.score[1] >= WINNING_SCORE:
+            return "Right Player Wins!"
+        return None
 
     def reset(self):
         self.left_paddle.reset()
@@ -114,6 +126,7 @@ class GameState:
         self.ball.height = self.height
         self.ball.reset()
         self.score = [0, 0]
+        self.phase = self.PLAYING
 
     def apply_display_size(self, width: int, height: int):
         self.width = width
@@ -243,14 +256,8 @@ def draw_playing(screen, state, font, small_font):
     screen.blit(left_score, (width // 4 - left_score.get_width() // 2, 20))
     screen.blit(right_score, (3 * width // 4 - right_score.get_width() // 2, 20))
 
-    winner = None
-    if state.score[0] >= WINNING_SCORE:
-        winner = "Left Player Wins!"
-    elif state.score[1] >= WINNING_SCORE:
-        winner = "Right Player Wins!"
-
-    if winner:
-        msg = font.render(winner, True, WHITE)
+    if state.phase == GameState.GAME_OVER and state.winner:
+        msg = font.render(state.winner, True, WHITE)
         screen.blit(msg, (width // 2 - msg.get_width() // 2, height // 2 - 40))
         restart = small_font.render("Press R to restart", True, WHITE)
         screen.blit(restart, (width // 2 - restart.get_width() // 2, height // 2 + 20))
@@ -335,13 +342,15 @@ async def main():
                         state = None
 
         if phase == PHASE_PLAYING and state is not None:
-            pressed_keys = pygame.key.get_pressed()
-            winner = state.score[0] >= WINNING_SCORE or state.score[1] >= WINNING_SCORE
-
-            if not winner:
+            if state.phase == GameState.PLAYING:
+                pressed_keys = pygame.key.get_pressed()
                 update_gameplay(state, pressed_keys)
-            elif pressed_keys[pygame.K_r]:
-                state.reset()
+                if state.winner:
+                    state.phase = GameState.GAME_OVER
+            elif state.phase == GameState.GAME_OVER:
+                pressed_keys = pygame.key.get_pressed()
+                if pressed_keys[pygame.K_r]:
+                    state.reset()
 
             draw_playing(screen, state, font, small_font)
         elif phase == PHASE_MENU:
