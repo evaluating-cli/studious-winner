@@ -15,33 +15,33 @@ SPEED_LABELS = {3: "Slow", 5: "Normal", 7: "Fast"}
 
 def handle_input(state, pressed_keys):
     if pressed_keys[pygame.K_w]:
-        state.left_paddle.rect.y -= state.left_paddle.speed
+        state.left_paddle.rect.y -= state.left_paddle.speed_per_frame
     if pressed_keys[pygame.K_s]:
-        state.left_paddle.rect.y += state.left_paddle.speed
+        state.left_paddle.rect.y += state.left_paddle.speed_per_frame
 
     if pressed_keys[pygame.K_UP]:
-        state.right_paddle.rect.y -= state.right_paddle.speed
+        state.right_paddle.rect.y -= state.right_paddle.speed_per_frame
     if pressed_keys[pygame.K_DOWN]:
-        state.right_paddle.rect.y += state.right_paddle.speed
+        state.right_paddle.rect.y += state.right_paddle.speed_per_frame
 
     state.left_paddle.rect.y = max(0, min(state.left_paddle.rect.y, state.height - state.left_paddle.rect.height))
     state.right_paddle.rect.y = max(0, min(state.right_paddle.rect.y, state.height - state.right_paddle.rect.height))
 
 
-def update_physics(state, dt):  # dt intentionally unused to preserve frame-based behavior
-    state.ball.rect.x += state.ball.vx
-    state.ball.rect.y += state.ball.vy
+def update_physics(state):
+    state.ball.rect.x += state.ball.vx_per_frame
+    state.ball.rect.y += state.ball.vy_per_frame
     if state.ball.rect.top <= 0 or state.ball.rect.bottom >= state.height:
-        state.ball.vy = -state.ball.vy
+        state.ball.vy_per_frame = -state.ball.vy_per_frame
 
 
 def resolve_collisions(state):
-    if state.ball.rect.colliderect(state.left_paddle.rect) and state.ball.vx < 0:
+    if state.ball.rect.colliderect(state.left_paddle.rect) and state.ball.vx_per_frame < 0:
         state.ball.rect.left = state.left_paddle.rect.right
-        state.ball.vx = -state.ball.vx
-    if state.ball.rect.colliderect(state.right_paddle.rect) and state.ball.vx > 0:
+        state.ball.vx_per_frame = -state.ball.vx_per_frame
+    if state.ball.rect.colliderect(state.right_paddle.rect) and state.ball.vx_per_frame > 0:
         state.ball.rect.right = state.right_paddle.rect.left
-        state.ball.vx = -state.ball.vx
+        state.ball.vx_per_frame = -state.ball.vx_per_frame
 
 
 def update_scoring(state):
@@ -109,8 +109,8 @@ def draw_options_screen(screen, fonts, options, selected_index):
 
     items = [
         ("Winning Score", str(options.winning_score)),
-        ("Ball Speed", SPEED_LABELS.get(options.ball_speed, str(options.ball_speed))),
-        ("Paddle Speed", SPEED_LABELS.get(options.paddle_speed, str(options.paddle_speed))),
+        ("Ball Speed", SPEED_LABELS.get(options.ball_speed_per_frame, str(options.ball_speed_per_frame))),
+        ("Paddle Speed", SPEED_LABELS.get(options.paddle_speed_per_frame, str(options.paddle_speed_per_frame))),
     ]
 
     for i, (label, value) in enumerate(items):
