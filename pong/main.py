@@ -1,4 +1,5 @@
 import asyncio
+import sys
 from dataclasses import dataclass, field
 
 import pygame
@@ -43,6 +44,7 @@ PHASE_PLAYING = "playing"
 @dataclass
 class Options:
     widescreen: bool = False
+    fullscreen: bool = False
 
     @property
     def width(self) -> int:
@@ -113,6 +115,73 @@ class GameState:
         self.ball.reset()
         self.score = [0, 0]
 
+    def apply_display_size(self, width: int, height: int):
+        self.width = width
+        self.height = height
+
+        paddle_start_y = self.height // 2 - PADDLE_HEIGHT // 2
+        self.left_paddle.y = paddle_start_y
+        self.right_paddle.y = paddle_start_y
+        self.right_paddle.x = self.width - 30
+        self.right_paddle.rect.x = self.right_paddle.x
+
+        self.left_paddle.rect.y = max(0, min(self.left_paddle.rect.y, self.height - self.left_paddle.rect.height))
+        self.right_paddle.rect.y = max(0, min(self.right_paddle.rect.y, self.height - self.right_paddle.rect.height))
+
+        self.ball.width = self.width
+        self.ball.height = self.height
+        self.ball.rect.clamp_ip(pygame.Rect(0, 0, self.width, self.height))
+
+
+def _sync_web_canvas_after_mode_switch(screen):
+    """Keep pygbag canvas size in sync after pygame.display.set_mode()."""
+    if sys.platform != "emscripten":
+        return
+
+    resize_hook = getattr(pygame.display, "_resize_event", None)
+    if callable(resize_hook):
+        resize_hook()
+    else:
+        # Fallback for environments without a bridge hook.
+        screen.fill(BLACK)
+        pygame.display.flip()
+
+
+def _get_fullscreen_target_size(default_width: int, default_height: int) -> tuple[int, int]:
+    get_desktop_sizes = getattr(pygame.display, "get_desktop_sizes", None)
+    if callable(get_desktop_sizes):
+        desktop_sizes = get_desktop_sizes()
+        if desktop_sizes:
+            return desktop_sizes[0]
+
+    info = pygame.display.Info()
+    if info.current_w > 0 and info.current_h > 0:
+        return info.current_w, info.current_h
+
+    current_surface = pygame.display.get_surface()
+    if current_surface is not None:
+        return current_surface.get_size()
+
+    return default_width, default_height
+
+
+def apply_display_mode(options: Options, state: GameState | None = None):
+    if options.fullscreen:
+        target_width, target_height = _get_fullscreen_target_size(options.width, HEIGHT)
+        flags = pygame.RESIZABLE
+    else:
+        target_width, target_height = options.width, HEIGHT
+        flags = 0
+
+    screen = pygame.display.set_mode((target_width, target_height), flags)
+    active_width, active_height = screen.get_size()
+
+    if state is not None:
+        state.apply_display_size(active_width, active_height)
+
+    _sync_web_canvas_after_mode_switch(screen)
+    return screen
+
 
 def draw_dashed_line(surface, color, start, end, dash_length=10):
     x1, y1 = start
@@ -125,7 +194,8 @@ def draw_dashed_line(surface, color, start, end, dash_length=10):
         pygame.draw.line(surface, color, (x1, start_y), (x2, end_y), 2)
 
 
-def draw_menu(screen, width, height, font, small_font):
+def draw_menu(screen, font, small_font):
+    width, height = screen.get_size()
     screen.fill(BLACK)
     title = font.render("PONG", True, WHITE)
     start = small_font.render("Press ENTER to start", True, WHITE)
@@ -137,23 +207,32 @@ def draw_menu(screen, width, height, font, small_font):
     pygame.display.flip()
 
 
-def draw_options(screen, options, width, height, font, small_font):
+def draw_options(screen, options, font, small_font):
+    width, height = screen.get_size()
     screen.fill(BLACK)
     title = font.render("OPTIONS", True, WHITE)
-    ws_value = "ON" if options.widescreen else "OFF"
-    ws_label = small_font.render(f"Widescreen: {ws_value} (ENTER to toggle)", True, WHITE)
+
+    aspect_value = "WIDESCREEN" if options.widescreen else "RETRO 4:3"
+    aspect_label = small_font.render(f"Aspect: {aspect_value} (ENTER to toggle)", True, WHITE)
+
+    fullscreen_value = "ON" if options.fullscreen else "OFF"
+    fullscreen_label = small_font.render(f"Fullscreen: {fullscreen_value} (F to toggle)", True, WHITE)
+
     back = small_font.render("ESC to go back", True, WHITE)
 
-    screen.blit(title, (width // 2 - title.get_width() // 2, height // 2 - 80))
-    screen.blit(ws_label, (width // 2 - ws_label.get_width() // 2, height // 2))
-    screen.blit(back, (width // 2 - back.get_width() // 2, height // 2 + 35))
+    screen.blit(title, (width // 2 - title.get_width() // 2, height // 2 - 100))
+    screen.blit(aspect_label, (width // 2 - aspect_label.get_width() // 2, height // 2 - 20))
+    screen.blit(fullscreen_label, (width // 2 - fullscreen_label.get_width() // 2, height // 2 + 20))
+    screen.blit(back, (width // 2 - back.get_width() // 2, height // 2 + 60))
     pygame.display.flip()
 
 
 def draw_playing(screen, state, font, small_font):
+    width, height = screen.get_size()
+    state.apply_display_size(width, height)
     screen.fill(BLACK)
 
-    draw_dashed_line(screen, WHITE, (state.width // 2, 0), (state.width // 2, state.height))
+    draw_dashed_line(screen, WHITE, (width // 2, 0), (width // 2, height))
 
     pygame.draw.rect(screen, WHITE, state.left_paddle.rect)
     pygame.draw.rect(screen, WHITE, state.right_paddle.rect)
@@ -161,8 +240,8 @@ def draw_playing(screen, state, font, small_font):
 
     left_score = font.render(str(state.score[0]), True, WHITE)
     right_score = font.render(str(state.score[1]), True, WHITE)
-    screen.blit(left_score, (state.width // 4 - left_score.get_width() // 2, 20))
-    screen.blit(right_score, (3 * state.width // 4 - right_score.get_width() // 2, 20))
+    screen.blit(left_score, (width // 4 - left_score.get_width() // 2, 20))
+    screen.blit(right_score, (3 * width // 4 - right_score.get_width() // 2, 20))
 
     winner = None
     if state.score[0] >= WINNING_SCORE:
@@ -172,12 +251,12 @@ def draw_playing(screen, state, font, small_font):
 
     if winner:
         msg = font.render(winner, True, WHITE)
-        screen.blit(msg, (state.width // 2 - msg.get_width() // 2, state.height // 2 - 40))
+        screen.blit(msg, (width // 2 - msg.get_width() // 2, height // 2 - 40))
         restart = small_font.render("Press R to restart", True, WHITE)
-        screen.blit(restart, (state.width // 2 - restart.get_width() // 2, state.height // 2 + 20))
+        screen.blit(restart, (width // 2 - restart.get_width() // 2, height // 2 + 20))
 
     hint = small_font.render("W/S  vs  UP/DOWN", True, (150, 150, 150))
-    screen.blit(hint, (state.width // 2 - hint.get_width() // 2, state.height - 25))
+    screen.blit(hint, (width // 2 - hint.get_width() // 2, height - 25))
 
     pygame.display.flip()
 
@@ -217,7 +296,7 @@ def update_gameplay(state, pressed_keys):
 async def main():
     pygame.init()
     options = Options()
-    screen = pygame.display.set_mode((options.width, HEIGHT))
+    screen = apply_display_mode(options)
     pygame.display.set_caption("Pong")
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("monospace", 48)
@@ -236,14 +315,18 @@ async def main():
             elif event.type == pygame.KEYDOWN:
                 if phase == PHASE_MENU:
                     if event.key == pygame.K_RETURN:
-                        state = GameState(options.width, HEIGHT)
+                        width, height = screen.get_size()
+                        state = GameState(width, height)
                         phase = PHASE_PLAYING
                     elif event.key == pygame.K_o:
                         phase = PHASE_OPTIONS
                 elif phase == PHASE_OPTIONS:
                     if event.key == pygame.K_RETURN:
                         options.widescreen = not options.widescreen
-                        screen = pygame.display.set_mode((options.width, HEIGHT))
+                        screen = apply_display_mode(options, state)
+                    elif event.key == pygame.K_f:
+                        options.fullscreen = not options.fullscreen
+                        screen = apply_display_mode(options, state)
                     elif event.key == pygame.K_ESCAPE:
                         phase = PHASE_MENU
                 elif phase == PHASE_PLAYING:
@@ -262,9 +345,9 @@ async def main():
 
             draw_playing(screen, state, font, small_font)
         elif phase == PHASE_MENU:
-            draw_menu(screen, options.width, HEIGHT, font, small_font)
+            draw_menu(screen, font, small_font)
         elif phase == PHASE_OPTIONS:
-            draw_options(screen, options, options.width, HEIGHT, font, small_font)
+            draw_options(screen, options, font, small_font)
 
         await asyncio.sleep(0)
 
