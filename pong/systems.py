@@ -3,16 +3,10 @@ import sys
 
 import pygame
 
-if __package__ in (None, ""):
-    from config import (
-        BLACK,
-        WHITE,
-    )
-else:
-    from .config import (
-        BLACK,
-        WHITE,
-    )
+from .config import (
+    BLACK,
+    WHITE,
+)
 
 WINNING_SCORE_OPTIONS = [3, 5, 7, 10]
 SPEED_OPTIONS = [3, 5, 7]
@@ -30,12 +24,8 @@ def handle_input(state, pressed_keys):
     if pressed_keys[pygame.K_DOWN]:
         state.right_paddle.rect.y += state.right_paddle.speed
 
-    state.left_paddle.rect.y = max(
-        0, min(state.left_paddle.rect.y, state.height - state.left_paddle.rect.height)
-    )
-    state.right_paddle.rect.y = max(
-        0, min(state.right_paddle.rect.y, state.height - state.right_paddle.rect.height)
-    )
+    state.left_paddle.rect.y = max(0, min(state.left_paddle.rect.y, state.height - state.left_paddle.rect.height))
+    state.right_paddle.rect.y = max(0, min(state.right_paddle.rect.y, state.height - state.right_paddle.rect.height))
 
 
 def update_physics(state, dt):  # dt intentionally unused to preserve frame-based behavior
@@ -129,9 +119,7 @@ def draw_options_screen(screen, fonts, options, selected_index):
         text = small_font.render(f"{prefix}{label}:  < {value} >", True, color)
         screen.blit(text, (width // 2 - text.get_width() // 2, height // 2 - 40 + i * 50))
 
-    hint = small_font.render(
-        "UP/DOWN select   LEFT/RIGHT change   ESC confirm", True, (100, 100, 100)
-    )
+    hint = small_font.render("UP/DOWN select   LEFT/RIGHT change   ESC confirm", True, (100, 100, 100))
     screen.blit(hint, (width // 2 - hint.get_width() // 2, height - 30))
 
     pygame.display.flip()
@@ -164,7 +152,7 @@ def draw_frame(screen, state, fonts):
     if winner:
         msg = font.render(winner, True, WHITE)
         screen.blit(msg, (width // 2 - msg.get_width() // 2, height // 2 - 40))
-        restart = small_font.render("Press R to restart", True, WHITE)
+        restart = small_font.render("R to restart  \u00b7  Esc for menu", True, WHITE)
         screen.blit(restart, (width // 2 - restart.get_width() // 2, height // 2 + 20))
 
     hint = small_font.render("W/S  vs  UP/DOWN", True, (150, 150, 150))
