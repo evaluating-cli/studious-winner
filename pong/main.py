@@ -97,53 +97,69 @@ async def run_game(screen, clock, fonts, options):
         await asyncio.sleep(0)
 
 
-async def main():
-    pygame.init()
+def init_display_and_fonts():
     if sys.platform == "emscripten":
         screen = pygame.display.set_mode((0, 0), pygame.RESIZABLE)
-        from platform import window as _js_window
     else:
         screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
-        _js_window = None
     pygame.display.set_caption("Pong")
     clock = pygame.time.Clock()
     fonts = {
         "font": pygame.font.SysFont("monospace", 48),
         "small_font": pygame.font.SysFont("monospace", 20),
     }
+    return screen, clock, fonts
 
+
+async def run_desktop_session(screen, clock, fonts):
     options = Options()
     while True:
-        if _js_window:
-            # Web: wait for the HTML Play button to signal start
-            while not _js_window.localStorage.getItem("pong_play_requested"):
-                clock.tick(10)  # low rate while idle — canvas hidden behind overlay
-                screen.fill((0, 0, 0))
-                pygame.display.flip()
-                await asyncio.sleep(0)
-            _js_window.localStorage.removeItem("pong_play_requested")
-            # Read winning score option set by the HTML overlay
-            ws = _js_window.localStorage.getItem("pong_winning_score")
-            if ws:
-                try:
-                    val = int(ws)
-                    if val in WINNING_SCORE_OPTIONS:
-                        options.winning_score = val
-                except (ValueError, TypeError):
-                    pass
-        else:
-            result = await run_start_screen(screen, clock, fonts)
-            if not result:
+        result = await run_start_screen(screen, clock, fonts)
+        if not result:
+            break
+        if result == "options":
+            if not await run_options_screen(screen, clock, fonts, options):
                 break
-            if result == "options":
-                if not await run_options_screen(screen, clock, fonts, options):
-                    break
-                continue
+            continue
 
         await run_game(screen, clock, fonts, options)
 
-        if _js_window:
-            _js_window.showOverlay()
+
+async def run_web_session(screen, clock, fonts):
+    from platform import window as _js_window
+
+    options = Options()
+    while True:
+        while not _js_window.localStorage.getItem("pong_play_requested"):
+            clock.tick(10)
+            screen.fill((0, 0, 0))
+            pygame.display.flip()
+            await asyncio.sleep(0)
+
+        _js_window.localStorage.removeItem("pong_play_requested")
+
+        ws = _js_window.localStorage.getItem("pong_winning_score")
+        _js_window.localStorage.removeItem("pong_winning_score")
+        if ws:
+            try:
+                val = int(ws)
+                if val in WINNING_SCORE_OPTIONS:
+                    options.winning_score = val
+            except (ValueError, TypeError):
+                pass
+
+        await run_game(screen, clock, fonts, options)
+        _js_window.showOverlay()
+
+
+async def main():
+    pygame.init()
+    screen, clock, fonts = init_display_and_fonts()
+
+    if sys.platform == "emscripten":
+        await run_web_session(screen, clock, fonts)
+    else:
+        await run_desktop_session(screen, clock, fonts)
 
 
 def run():
