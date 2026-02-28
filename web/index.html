@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pong</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #000;
+      color: #fff;
+      font-family: "Courier New", Courier, monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      gap: 2rem;
+      padding: 2rem;
+    }
+
+    .title {
+      font-size: clamp(3rem, 10vw, 6rem);
+      font-weight: bold;
+      letter-spacing: 0.2em;
+      text-align: center;
+    }
+
+    .divider {
+      width: min(400px, 80vw);
+      border: none;
+      border-top: 2px solid #fff;
+    }
+
+    .controls {
+      width: min(400px, 80vw);
+      text-align: center;
+    }
+
+    .controls h2 {
+      font-size: 0.9rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      opacity: 0.7;
+    }
+
+    .controls table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.85rem;
+    }
+
+    .controls th,
+    .controls td {
+      padding: 0.35rem 0.75rem;
+      text-align: center;
+    }
+
+    .controls th {
+      opacity: 0.6;
+      font-weight: normal;
+      border-bottom: 1px solid rgba(255,255,255,0.3);
+    }
+
+    #play-btn {
+      margin-top: 0.5rem;
+      padding: 1rem 3rem;
+      background: #fff;
+      color: #000;
+      border: none;
+      font-family: inherit;
+      font-size: 1.2rem;
+      font-weight: bold;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, transform 0.1s;
+    }
+
+    #play-btn:hover { background: #ddd; }
+    #play-btn:active { transform: scale(0.97); }
+    #play-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .hint {
+      font-size: 0.75rem;
+      opacity: 0.45;
+      letter-spacing: 0.1em;
+    }
+  </style>
+</head>
+<body>
+  <div class="title">PONG</div>
+
+  <hr class="divider">
+
+  <div class="controls">
+    <h2>Controls</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Player</th>
+          <th>Move Up</th>
+          <th>Move Down</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Left</td>
+          <td>W</td>
+          <td>S</td>
+        </tr>
+        <tr>
+          <td>Right</td>
+          <td>↑</td>
+          <td>↓</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <button id="play-btn">▶ PLAY</button>
+
+  <p class="hint">First to 7 points wins &nbsp;·&nbsp; Press R to restart</p>
+
+  <script>
+    document.getElementById('play-btn').addEventListener('click', function () {
+      const btn = document.getElementById('play-btn');
+      btn.disabled = true;
+      btn.textContent = 'Loading…';
+      window.location.href = 'game.html';
+    });
+  </script>
+</body>
+</html>
