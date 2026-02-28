@@ -1,3 +1,6 @@
+import platform
+import sys
+
 import pygame
 
 if __package__ in (None, ""):
@@ -77,11 +80,26 @@ def draw_start_screen(screen, fonts):
 
     title = font.render("PONG", True, WHITE)
     start = small_font.render("Press ENTER to start", True, WHITE)
-    options = small_font.render("Press O for options", True, (150, 150, 150))
+    options_hint = small_font.render("Press O for options", True, (150, 150, 150))
 
     screen.blit(title, (width // 2 - title.get_width() // 2, height // 2 - 60))
     screen.blit(start, (width // 2 - start.get_width() // 2, height // 2 + 20))
-    screen.blit(options, (width // 2 - options.get_width() // 2, height // 2 + 50))
+    screen.blit(options_hint, (width // 2 - options_hint.get_width() // 2, height // 2 + 50))
+
+    debug_color = (80, 80, 80)
+    debug_line_height = 22
+    py_ver = sys.version.split()[0]
+    pg_ver = pygame.version.ver
+    plat = platform.platform(terse=True)
+    display_info = pygame.display.Info()
+    debug_lines = [
+        f"Python {py_ver} | pygame-ce {pg_ver}",
+        f"Platform: {plat}",
+        f"Display: {display_info.current_w}x{display_info.current_h} | Window: {width}x{height}",
+    ]
+    for i, line in enumerate(debug_lines):
+        surf = small_font.render(line, True, debug_color)
+        screen.blit(surf, (4, height - (len(debug_lines) - i) * debug_line_height))
 
     pygame.display.flip()
 
