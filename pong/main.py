@@ -59,9 +59,9 @@ async def run_options_screen(screen, clock, fonts, options):
                     if selected == 0:
                         options.winning_score = _cycle_option(WINNING_SCORE_OPTIONS, options.winning_score, delta)
                     elif selected == 1:
-                        options.ball_speed = _cycle_option(SPEED_OPTIONS, options.ball_speed, delta, 1)
+                        options.ball_speed_per_frame = _cycle_option(SPEED_OPTIONS, options.ball_speed_per_frame, delta, 1)
                     elif selected == 2:
-                        options.paddle_speed = _cycle_option(SPEED_OPTIONS, options.paddle_speed, delta, 1)
+                        options.paddle_speed_per_frame = _cycle_option(SPEED_OPTIONS, options.paddle_speed_per_frame, delta, 1)
         draw_options_screen(screen, fonts, options, selected)
         await asyncio.sleep(0)
     return True
@@ -73,7 +73,7 @@ async def run_game(screen, clock, fonts, options):
 
     running = True
     while running:
-        dt = clock.tick(FPS) / 1000.0
+        clock.tick(FPS)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -82,7 +82,7 @@ async def run_game(screen, clock, fonts, options):
         pressed_keys = pygame.key.get_pressed()
         handle_input(state, pressed_keys)
 
-        update_physics(state, dt)
+        update_physics(state)
         resolve_collisions(state)
         update_scoring(state)
 
