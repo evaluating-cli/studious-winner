@@ -3,16 +3,10 @@ import sys
 
 import pygame
 
-if __package__ in (None, ""):
-    from config import (
-        BLACK,
-        WHITE,
-    )
-else:
-    from .config import (
-        BLACK,
-        WHITE,
-    )
+from .config import (
+    BLACK,
+    WHITE,
+)
 
 WINNING_SCORE_OPTIONS = [3, 5, 7, 10]
 SPEED_OPTIONS = [180, 300, 420]
@@ -33,12 +27,8 @@ def handle_input(state, pressed_keys, dt):
     if pressed_keys[pygame.K_DOWN]:
         state.right_paddle.y_pos += paddle_delta
 
-    state.left_paddle.y_pos = max(0.0, min(state.left_paddle.y_pos, state.height - state.left_paddle.rect.height))
-    state.right_paddle.y_pos = max(
-        0.0, min(state.right_paddle.y_pos, state.height - state.right_paddle.rect.height)
-    )
-    state.left_paddle.sync_rect()
-    state.right_paddle.sync_rect()
+    state.left_paddle.rect.y = max(0, min(state.left_paddle.rect.y, state.height - state.left_paddle.rect.height))
+    state.right_paddle.rect.y = max(0, min(state.right_paddle.rect.y, state.height - state.right_paddle.rect.height))
 
 
 def update_physics(state, dt):
@@ -143,9 +133,7 @@ def draw_options_screen(screen, fonts, options, selected_index):
         text = small_font.render(f"{prefix}{label}:  < {value} >", True, color)
         screen.blit(text, (width // 2 - text.get_width() // 2, height // 2 - 40 + i * 50))
 
-    hint = small_font.render(
-        "UP/DOWN select   LEFT/RIGHT change   ESC confirm", True, (100, 100, 100)
-    )
+    hint = small_font.render("UP/DOWN select   LEFT/RIGHT change   ESC confirm", True, (100, 100, 100))
     screen.blit(hint, (width // 2 - hint.get_width() // 2, height - 30))
 
     pygame.display.flip()

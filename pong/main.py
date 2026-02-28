@@ -3,34 +3,19 @@ import sys
 
 import pygame
 
-if __package__ in (None, ""):
-    from config import FPS, HEIGHT, WIDTH
-    from entities import GameState, Options
-    from systems import (
-        SPEED_OPTIONS,
-        WINNING_SCORE_OPTIONS,
-        draw_frame,
-        draw_options_screen,
-        draw_start_screen,
-        handle_input,
-        resolve_collisions,
-        update_physics,
-        update_scoring,
-    )
-else:
-    from .config import FPS, HEIGHT, WIDTH
-    from .entities import GameState, Options
-    from .systems import (
-        SPEED_OPTIONS,
-        WINNING_SCORE_OPTIONS,
-        draw_frame,
-        draw_options_screen,
-        draw_start_screen,
-        handle_input,
-        resolve_collisions,
-        update_physics,
-        update_scoring,
-    )
+from .config import FPS, HEIGHT, WIDTH
+from .entities import GameState, Options
+from .systems import (
+    SPEED_OPTIONS,
+    WINNING_SCORE_OPTIONS,
+    draw_frame,
+    draw_options_screen,
+    draw_start_screen,
+    handle_input,
+    resolve_collisions,
+    update_physics,
+    update_scoring,
+)
 
 
 async def run_start_screen(screen, clock, fonts):
@@ -72,17 +57,11 @@ async def run_options_screen(screen, clock, fonts, options):
                 elif event.key in (pygame.K_LEFT, pygame.K_RIGHT):
                     delta = -1 if event.key == pygame.K_LEFT else 1
                     if selected == 0:
-                        options.winning_score = _cycle_option(
-                            WINNING_SCORE_OPTIONS, options.winning_score, delta
-                        )
+                        options.winning_score = _cycle_option(WINNING_SCORE_OPTIONS, options.winning_score, delta)
                     elif selected == 1:
-                        options.ball_speed = _cycle_option(
-                            SPEED_OPTIONS, options.ball_speed, delta, 1
-                        )
+                        options.ball_speed = _cycle_option(SPEED_OPTIONS, options.ball_speed, delta, 1)
                     elif selected == 2:
-                        options.paddle_speed = _cycle_option(
-                            SPEED_OPTIONS, options.paddle_speed, delta, 1
-                        )
+                        options.paddle_speed = _cycle_option(SPEED_OPTIONS, options.paddle_speed, delta, 1)
         draw_options_screen(screen, fonts, options, selected)
         await asyncio.sleep(0)
     return True
@@ -167,4 +146,9 @@ async def main():
             _js_window.showOverlay()
 
 
-asyncio.run(main())
+def run():
+    asyncio.run(main())
+
+
+if __name__ == "__main__":
+    run()
