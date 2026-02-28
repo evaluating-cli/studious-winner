@@ -32,45 +32,54 @@ else:
 class Options:
     winning_score: int = WINNING_SCORE
     ball_speed: int = BALL_SPEED_X
-    paddle_speed: int = 5
+    paddle_speed: int = PADDLE_SPEED
 
 
 @dataclass
 class Paddle:
     x: int
     y: int
-    speed: int = PADDLE_SPEED
+    speed: float = PADDLE_SPEED  # pixels per second
+    y_pos: float = field(init=False)
     rect: pygame.Rect = field(init=False)
 
     def __post_init__(self):
-        self.rect = pygame.Rect(self.x, self.y, PADDLE_WIDTH, PADDLE_HEIGHT)
+        self.y_pos = float(self.y)
+        self.rect = pygame.Rect(self.x, int(self.y_pos), PADDLE_WIDTH, PADDLE_HEIGHT)
+
+    def sync_rect(self):
+        self.rect.x = self.x
+        self.rect.y = int(round(self.y_pos))
 
     def reset(self):
-        self.rect.x = self.x
-        self.rect.y = self.y
+        self.y_pos = float(self.y)
+        self.sync_rect()
 
 
 @dataclass
 class Ball:
     width: int = WIDTH
     height: int = HEIGHT
-    speed: int = BALL_SPEED_X
-    vx: int = field(init=False)
-    vy: int = field(init=False)
+    speed: float = BALL_SPEED_X  # pixels per second on each axis
+    x_pos: float = field(init=False)
+    y_pos: float = field(init=False)
+    vx: float = field(init=False)
+    vy: float = field(init=False)
     rect: pygame.Rect = field(init=False)
 
     def __post_init__(self):
         self.reset()
 
+    def sync_rect(self):
+        self.rect.x = int(round(self.x_pos))
+        self.rect.y = int(round(self.y_pos))
+
     def reset(self):
-        self.rect = pygame.Rect(
-            self.width // 2 - BALL_SIZE // 2,
-            self.height // 2 - BALL_SIZE // 2,
-            BALL_SIZE,
-            BALL_SIZE,
-        )
-        self.vx = self.speed
-        self.vy = self.speed
+        self.x_pos = float(self.width // 2 - BALL_SIZE // 2)
+        self.y_pos = float(self.height // 2 - BALL_SIZE // 2)
+        self.rect = pygame.Rect(int(self.x_pos), int(self.y_pos), BALL_SIZE, BALL_SIZE)
+        self.vx = float(self.speed)
+        self.vy = float(self.speed)
 
 
 @dataclass

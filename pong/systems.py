@@ -15,42 +15,56 @@ else:
     )
 
 WINNING_SCORE_OPTIONS = [3, 5, 7, 10]
-SPEED_OPTIONS = [3, 5, 7]
-SPEED_LABELS = {3: "Slow", 5: "Normal", 7: "Fast"}
+SPEED_OPTIONS = [180, 300, 420]
+SPEED_LABELS = {180: "Slow", 300: "Normal", 420: "Fast"}
 
 
-def handle_input(state, pressed_keys):
+def handle_input(state, pressed_keys, dt):
+    """Apply time-based paddle movement using dt in seconds."""
+    paddle_delta = state.left_paddle.speed * dt
+
     if pressed_keys[pygame.K_w]:
-        state.left_paddle.rect.y -= state.left_paddle.speed
+        state.left_paddle.y_pos -= paddle_delta
     if pressed_keys[pygame.K_s]:
-        state.left_paddle.rect.y += state.left_paddle.speed
+        state.left_paddle.y_pos += paddle_delta
 
     if pressed_keys[pygame.K_UP]:
-        state.right_paddle.rect.y -= state.right_paddle.speed
+        state.right_paddle.y_pos -= paddle_delta
     if pressed_keys[pygame.K_DOWN]:
-        state.right_paddle.rect.y += state.right_paddle.speed
+        state.right_paddle.y_pos += paddle_delta
 
-    state.left_paddle.rect.y = max(
-        0, min(state.left_paddle.rect.y, state.height - state.left_paddle.rect.height)
+    state.left_paddle.y_pos = max(0.0, min(state.left_paddle.y_pos, state.height - state.left_paddle.rect.height))
+    state.right_paddle.y_pos = max(
+        0.0, min(state.right_paddle.y_pos, state.height - state.right_paddle.rect.height)
     )
-    state.right_paddle.rect.y = max(
-        0, min(state.right_paddle.rect.y, state.height - state.right_paddle.rect.height)
-    )
+    state.left_paddle.sync_rect()
+    state.right_paddle.sync_rect()
 
 
-def update_physics(state, dt):  # dt intentionally unused to preserve frame-based behavior
-    state.ball.rect.x += state.ball.vx
-    state.ball.rect.y += state.ball.vy
-    if state.ball.rect.top <= 0 or state.ball.rect.bottom >= state.height:
+def update_physics(state, dt):
+    """Advance ball physics with time-based velocity (pixels/second)."""
+    state.ball.x_pos += state.ball.vx * dt
+    state.ball.y_pos += state.ball.vy * dt
+    state.ball.sync_rect()
+
+    if state.ball.rect.top <= 0:
+        state.ball.y_pos = 0.0
         state.ball.vy = -state.ball.vy
+        state.ball.sync_rect()
+    elif state.ball.rect.bottom >= state.height:
+        state.ball.y_pos = float(state.height - state.ball.rect.height)
+        state.ball.vy = -state.ball.vy
+        state.ball.sync_rect()
 
 
 def resolve_collisions(state):
     if state.ball.rect.colliderect(state.left_paddle.rect) and state.ball.vx < 0:
         state.ball.rect.left = state.left_paddle.rect.right
+        state.ball.x_pos = float(state.ball.rect.x)
         state.ball.vx = -state.ball.vx
     if state.ball.rect.colliderect(state.right_paddle.rect) and state.ball.vx > 0:
         state.ball.rect.right = state.right_paddle.rect.left
+        state.ball.x_pos = float(state.ball.rect.x)
         state.ball.vx = -state.ball.vx
 
 
@@ -164,7 +178,7 @@ def draw_frame(screen, state, fonts):
     if winner:
         msg = font.render(winner, True, WHITE)
         screen.blit(msg, (width // 2 - msg.get_width() // 2, height // 2 - 40))
-        restart = small_font.render("R to restart  \u00b7  Esc for menu", True, WHITE)
+        restart = small_font.render("R to restart  ·  Esc for menu", True, WHITE)
         screen.blit(restart, (width // 2 - restart.get_width() // 2, height // 2 + 20))
 
     hint = small_font.render("W/S  vs  UP/DOWN", True, (150, 150, 150))

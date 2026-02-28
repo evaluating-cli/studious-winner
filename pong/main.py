@@ -101,7 +101,7 @@ async def run_game(screen, clock, fonts, options):
                 running = False
 
         pressed_keys = pygame.key.get_pressed()
-        handle_input(state, pressed_keys)
+        handle_input(state, pressed_keys, dt)
 
         update_physics(state, dt)
         resolve_collisions(state)

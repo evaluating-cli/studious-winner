@@ -8,5 +8,8 @@ WINNING_SCORE = 7
 
 LEFT_PADDLE_X = 20
 PADDLE_START_Y = HEIGHT // 2 - PADDLE_HEIGHT // 2
-PADDLE_SPEED = 6
-BALL_SPEED_X = 5
+
+# Time-based movement model:
+# speeds are measured in pixels per second and multiplied by dt (seconds).
+PADDLE_SPEED = 360
+BALL_SPEED_X = 300
