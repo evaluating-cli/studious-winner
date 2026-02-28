@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 from dataclasses import dataclass, field
 
@@ -39,6 +40,10 @@ WIDESCREEN_WIDTH = 960
 PHASE_MENU = "menu"
 PHASE_OPTIONS = "options"
 PHASE_PLAYING = "playing"
+
+DEBUG_OVERLAY = os.getenv("PONG_DEBUG_OVERLAY", "0") == "1"
+MODE_SWITCH_COUNT = 0
+LAST_MODE_SWITCH_TICKS: int | None = None
 
 
 @dataclass
@@ -145,73 +150,38 @@ class GameState:
         self.ball.height = self.height
         self.ball.rect.clamp_ip(pygame.Rect(0, 0, self.width, self.height))
 
-
-def _sync_web_canvas_after_mode_switch(screen):
-    """Keep pygbag canvas size in sync after pygame.display.set_mode()."""
-    if sys.platform != "emscripten":
+def draw_debug_overlay(screen, small_font, options, state=None):
+    if not DEBUG_OVERLAY:
         return
 
-    resize_hook = getattr(pygame.display, "_resize_event", None)
-    if callable(resize_hook):
-        resize_hook()
-    else:
-        # Fallback for environments without a bridge hook.
-        screen.fill(BLACK)
-        pygame.display.flip()
-
-
-def _get_fullscreen_target_size(default_width: int, default_height: int) -> tuple[int, int]:
-    get_desktop_sizes = getattr(pygame.display, "get_desktop_sizes", None)
-    if callable(get_desktop_sizes):
-        desktop_sizes = get_desktop_sizes()
-        if desktop_sizes:
-            return desktop_sizes[0]
-
-    info = pygame.display.Info()
-    if info.current_w > 0 and info.current_h > 0:
-        return info.current_w, info.current_h
-
-    current_surface = pygame.display.get_surface()
-    if current_surface is not None:
-        return current_surface.get_size()
-
-    return default_width, default_height
-
-
-def apply_display_mode(options: Options, state: GameState | None = None):
-    if options.fullscreen:
-        target_width, target_height = _get_fullscreen_target_size(options.width, HEIGHT)
-        flags = pygame.RESIZABLE
-    else:
-        target_width, target_height = options.width, HEIGHT
-        flags = 0
-
-    screen = pygame.display.set_mode((target_width, target_height), flags)
-    active_width, active_height = screen.get_size()
+    screen_width, screen_height = screen.get_size()
+    lines = [
+        f"screen: {screen_width}x{screen_height}",
+        f"options: ws={options.widescreen} fs={options.fullscreen}",
+        "mode switch: "
+        + (
+            f"#{MODE_SWITCH_COUNT} @ {LAST_MODE_SWITCH_TICKS}ms"
+            if LAST_MODE_SWITCH_TICKS is not None
+            else "n/a"
+        ),
+    ]
 
     if state is not None:
-        state.apply_display_size(active_width, active_height)
+        lines.insert(1, f"state: {state.width}x{state.height}")
 
-    _sync_web_canvas_after_mode_switch(screen)
-    return screen
+    text_surfaces = [small_font.render(line, True, WHITE) for line in lines]
+    line_height = small_font.get_height() + 4
+    padding = 8
+    overlay_width = max(text.get_width() for text in text_surfaces) + (padding * 2)
+    overlay_height = line_height * len(text_surfaces) + (padding * 2)
+    overlay_rect = pygame.Rect(8, 8, overlay_width, overlay_height)
 
-    def apply_display_size(self, width: int, height: int):
-        self.width = width
-        self.height = height
+    pygame.draw.rect(screen, BLACK, overlay_rect)
+    pygame.draw.rect(screen, WHITE, overlay_rect, 1)
 
-        paddle_start_y = self.height // 2 - PADDLE_HEIGHT // 2
-        self.left_paddle.y = paddle_start_y
-        self.right_paddle.y = paddle_start_y
-        self.right_paddle.x = self.width - 30
-        self.right_paddle.rect.x = self.right_paddle.x
-
-        self.left_paddle.rect.y = max(0, min(self.left_paddle.rect.y, self.height - self.left_paddle.rect.height))
-        self.right_paddle.rect.y = max(0, min(self.right_paddle.rect.y, self.height - self.right_paddle.rect.height))
-
-        self.ball.width = self.width
-        self.ball.height = self.height
-        self.ball.rect.clamp_ip(pygame.Rect(0, 0, self.width, self.height))
-
+    for index, text_surface in enumerate(text_surfaces):
+        y = overlay_rect.top + padding + index * line_height
+        screen.blit(text_surface, (overlay_rect.left + padding, y))
 
 def _sync_web_canvas_after_mode_switch(screen):
     """Keep pygbag canvas size in sync after pygame.display.set_mode()."""
@@ -253,6 +223,8 @@ def _get_fullscreen_target_size(default_width: int, default_height: int) -> tupl
 
 
 def apply_display_mode(options: Options, state: GameState | None = None):
+    global MODE_SWITCH_COUNT, LAST_MODE_SWITCH_TICKS
+
     if options.fullscreen:
         target_width, target_height = _get_fullscreen_target_size(options.width, HEIGHT)
         flags = pygame.RESIZABLE
@@ -265,6 +237,9 @@ def apply_display_mode(options: Options, state: GameState | None = None):
 
     screen = pygame.display.set_mode((target_width, target_height), flags)
     active_width, active_height = screen.get_size()
+
+    MODE_SWITCH_COUNT += 1
+    LAST_MODE_SWITCH_TICKS = pygame.time.get_ticks()
 
     if state is not None:
         state.apply_display_size(active_width, active_height)
@@ -284,7 +259,7 @@ def draw_dashed_line(surface, color, start, end, dash_length=10):
         pygame.draw.line(surface, color, (x1, start_y), (x2, end_y), 2)
 
 
-def draw_menu(screen, font, small_font):
+def draw_menu(screen, options, font, small_font):
     width, height = screen.get_size()
     screen.fill(BLACK)
     title = font.render("PONG", True, WHITE)
@@ -294,6 +269,7 @@ def draw_menu(screen, font, small_font):
     screen.blit(title, (width // 2 - title.get_width() // 2, height // 2 - 80))
     screen.blit(start, (width // 2 - start.get_width() // 2, height // 2))
     screen.blit(opts, (width // 2 - opts.get_width() // 2, height // 2 + 35))
+    draw_debug_overlay(screen, small_font, options)
     pygame.display.flip()
 
 
@@ -314,10 +290,11 @@ def draw_options(screen, options, font, small_font):
     screen.blit(aspect_label, (width // 2 - aspect_label.get_width() // 2, height // 2 - 20))
     screen.blit(fullscreen_label, (width // 2 - fullscreen_label.get_width() // 2, height // 2 + 20))
     screen.blit(back, (width // 2 - back.get_width() // 2, height // 2 + 60))
+    draw_debug_overlay(screen, small_font, options)
     pygame.display.flip()
 
 
-def draw_playing(screen, state, font, small_font):
+def draw_playing(screen, state, options, font, small_font):
     width, height = screen.get_size()
     state.apply_display_size(width, height)
     screen.fill(BLACK)
@@ -341,6 +318,7 @@ def draw_playing(screen, state, font, small_font):
 
     hint = small_font.render("W/S  vs  UP/DOWN", True, (150, 150, 150))
     screen.blit(hint, (width // 2 - hint.get_width() // 2, height - 25))
+    draw_debug_overlay(screen, small_font, options, state)
 
     pygame.display.flip()
 
@@ -429,9 +407,9 @@ async def main():
                 if pressed_keys[pygame.K_r]:
                     state.reset()
 
-            draw_playing(screen, state, font, small_font)
+            draw_playing(screen, state, options, font, small_font)
         elif phase == PHASE_MENU:
-            draw_menu(screen, font, small_font)
+            draw_menu(screen, options, font, small_font)
         elif phase == PHASE_OPTIONS:
             draw_options(screen, options, font, small_font)
 
