@@ -1,5 +1,4 @@
 import asyncio
-import pygame
 
 # Constants
 NORMAL_WIDTH, HEIGHT = 640, 480
