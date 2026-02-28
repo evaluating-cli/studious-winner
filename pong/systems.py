@@ -4,14 +4,16 @@ if __package__ in (None, ""):
     from config import (
         BLACK,
         WHITE,
-        WINNING_SCORE,
     )
 else:
     from .config import (
         BLACK,
         WHITE,
-        WINNING_SCORE,
     )
+
+WINNING_SCORE_OPTIONS = [3, 5, 7, 10]
+SPEED_OPTIONS = [3, 5, 7]
+SPEED_LABELS = {3: "Slow", 5: "Normal", 7: "Fast"}
 
 
 def handle_input(state, pressed_keys):
@@ -75,9 +77,39 @@ def draw_start_screen(screen, fonts):
 
     title = font.render("PONG", True, WHITE)
     start = small_font.render("Press ENTER to start", True, WHITE)
+    options = small_font.render("Press O for options", True, (150, 150, 150))
 
     screen.blit(title, (width // 2 - title.get_width() // 2, height // 2 - 60))
     screen.blit(start, (width // 2 - start.get_width() // 2, height // 2 + 20))
+    screen.blit(options, (width // 2 - options.get_width() // 2, height // 2 + 50))
+
+    pygame.display.flip()
+
+
+def draw_options_screen(screen, fonts, options, selected_index):
+    font = fonts["font"]
+    small_font = fonts["small_font"]
+    width, height = screen.get_size()
+
+    screen.fill(BLACK)
+
+    title = font.render("OPTIONS", True, WHITE)
+    screen.blit(title, (width // 2 - title.get_width() // 2, 60))
+
+    items = [
+        ("Winning Score", str(options.winning_score)),
+        ("Ball Speed", SPEED_LABELS.get(options.ball_speed, str(options.ball_speed))),
+        ("Paddle Speed", SPEED_LABELS.get(options.paddle_speed, str(options.paddle_speed))),
+    ]
+
+    for i, (label, value) in enumerate(items):
+        color = WHITE if i == selected_index else (150, 150, 150)
+        prefix = "> " if i == selected_index else "  "
+        text = small_font.render(f"{prefix}{label}:  < {value} >", True, color)
+        screen.blit(text, (width // 2 - text.get_width() // 2, height // 2 - 40 + i * 50))
+
+    hint = small_font.render("UP/DOWN select   LEFT/RIGHT change   ESC confirm", True, (100, 100, 100))
+    screen.blit(hint, (width // 2 - hint.get_width() // 2, height - 30))
 
     pygame.display.flip()
 
@@ -101,9 +133,9 @@ def draw_frame(screen, state, fonts):
     screen.blit(right_score, (3 * width // 4 - right_score.get_width() // 2, 20))
 
     winner = None
-    if state.score[0] >= WINNING_SCORE:
+    if state.score[0] >= state.winning_score:
         winner = "Left Player Wins!"
-    elif state.score[1] >= WINNING_SCORE:
+    elif state.score[1] >= state.winning_score:
         winner = "Right Player Wins!"
 
     if winner:
