@@ -2,17 +2,30 @@ from dataclasses import dataclass, field
 
 import pygame
 
-from .config import (
-    BALL_SIZE,
-    BALL_SPEED_X_PER_FRAME,
-    HEIGHT,
-    LEFT_PADDLE_X,
-    PADDLE_HEIGHT,
-    PADDLE_SPEED_PER_FRAME,
-    PADDLE_WIDTH,
-    WIDTH,
-    WINNING_SCORE,
-)
+if __package__ in (None, ""):
+    from config import (
+        BALL_SIZE,
+        BALL_SPEED_X_PER_FRAME,
+        HEIGHT,
+        LEFT_PADDLE_X,
+        PADDLE_HEIGHT,
+        PADDLE_SPEED_PER_FRAME,
+        PADDLE_WIDTH,
+        WIDTH,
+        WINNING_SCORE,
+    )
+else:
+    from .config import (
+        BALL_SIZE,
+        BALL_SPEED_X_PER_FRAME,
+        HEIGHT,
+        LEFT_PADDLE_X,
+        PADDLE_HEIGHT,
+        PADDLE_SPEED_PER_FRAME,
+        PADDLE_WIDTH,
+        WIDTH,
+        WINNING_SCORE,
+    )
 
 
 @dataclass

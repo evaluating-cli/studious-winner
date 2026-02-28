@@ -3,10 +3,16 @@ import sys
 
 import pygame
 
-from .config import (
-    BLACK,
-    WHITE,
-)
+if __package__ in (None, ""):
+    from config import (
+        BLACK,
+        WHITE,
+    )
+else:
+    from .config import (
+        BLACK,
+        WHITE,
+    )
 
 WINNING_SCORE_OPTIONS = [3, 5, 7, 10]
 SPEED_OPTIONS = [3, 5, 7]

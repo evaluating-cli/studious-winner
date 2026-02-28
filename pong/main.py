@@ -3,19 +3,34 @@ import sys
 
 import pygame
 
-from .config import FPS, HEIGHT, WIDTH
-from .entities import GameState, Options
-from .systems import (
-    SPEED_OPTIONS,
-    WINNING_SCORE_OPTIONS,
-    draw_frame,
-    draw_options_screen,
-    draw_start_screen,
-    handle_input,
-    resolve_collisions,
-    update_physics,
-    update_scoring,
-)
+if __package__ in (None, ""):
+    from config import FPS, HEIGHT, WIDTH
+    from entities import GameState, Options
+    from systems import (
+        SPEED_OPTIONS,
+        WINNING_SCORE_OPTIONS,
+        draw_frame,
+        draw_options_screen,
+        draw_start_screen,
+        handle_input,
+        resolve_collisions,
+        update_physics,
+        update_scoring,
+    )
+else:
+    from .config import FPS, HEIGHT, WIDTH
+    from .entities import GameState, Options
+    from .systems import (
+        SPEED_OPTIONS,
+        WINNING_SCORE_OPTIONS,
+        draw_frame,
+        draw_options_screen,
+        draw_start_screen,
+        handle_input,
+        resolve_collisions,
+        update_physics,
+        update_scoring,
+    )
 
 
 async def run_start_screen(screen, clock, fonts):
