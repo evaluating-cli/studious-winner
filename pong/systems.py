@@ -3,17 +3,13 @@ import pygame
 if __package__ in (None, ""):
     from config import (
         BLACK,
-        HEIGHT,
         WHITE,
-        WIDTH,
         WINNING_SCORE,
     )
 else:
     from .config import (
         BLACK,
-        HEIGHT,
         WHITE,
-        WIDTH,
         WINNING_SCORE,
     )
 
@@ -29,15 +25,15 @@ def handle_input(state, pressed_keys):
     if pressed_keys[pygame.K_DOWN]:
         state.right_paddle.rect.y += state.right_paddle.speed
 
-    state.left_paddle.rect.y = max(0, min(state.left_paddle.rect.y, HEIGHT - state.left_paddle.rect.height))
-    state.right_paddle.rect.y = max(0, min(state.right_paddle.rect.y, HEIGHT - state.right_paddle.rect.height))
+    state.left_paddle.rect.y = max(0, min(state.left_paddle.rect.y, state.height - state.left_paddle.rect.height))
+    state.right_paddle.rect.y = max(0, min(state.right_paddle.rect.y, state.height - state.right_paddle.rect.height))
 
 
 def update_physics(state, dt):  # dt intentionally unused to preserve frame-based behavior
     _ = dt
     state.ball.rect.x += state.ball.vx
     state.ball.rect.y += state.ball.vy
-    if state.ball.rect.top <= 0 or state.ball.rect.bottom >= HEIGHT:
+    if state.ball.rect.top <= 0 or state.ball.rect.bottom >= state.height:
         state.ball.vy = -state.ball.vy
 
 
@@ -54,7 +50,7 @@ def update_scoring(state):
     if state.ball.rect.left <= 0:
         state.score[1] += 1
         state.ball.reset()
-    elif state.ball.rect.right >= WIDTH:
+    elif state.ball.rect.right >= state.width:
         state.score[0] += 1
         state.ball.reset()
 
@@ -73,14 +69,15 @@ def draw_dashed_line(surface, color, start, end, dash_length=10):
 def draw_start_screen(screen, fonts):
     font = fonts["font"]
     small_font = fonts["small_font"]
+    width, height = screen.get_size()
 
     screen.fill(BLACK)
 
     title = font.render("PONG", True, WHITE)
     start = small_font.render("Press ENTER to start", True, WHITE)
 
-    screen.blit(title, (WIDTH // 2 - title.get_width() // 2, HEIGHT // 2 - 60))
-    screen.blit(start, (WIDTH // 2 - start.get_width() // 2, HEIGHT // 2 + 20))
+    screen.blit(title, (width // 2 - title.get_width() // 2, height // 2 - 60))
+    screen.blit(start, (width // 2 - start.get_width() // 2, height // 2 + 20))
 
     pygame.display.flip()
 
@@ -88,10 +85,11 @@ def draw_start_screen(screen, fonts):
 def draw_frame(screen, state, fonts):
     font = fonts["font"]
     small_font = fonts["small_font"]
+    width, height = screen.get_size()
 
     screen.fill(BLACK)
 
-    draw_dashed_line(screen, WHITE, (WIDTH // 2, 0), (WIDTH // 2, HEIGHT))
+    draw_dashed_line(screen, WHITE, (width // 2, 0), (width // 2, height))
 
     pygame.draw.rect(screen, WHITE, state.left_paddle.rect)
     pygame.draw.rect(screen, WHITE, state.right_paddle.rect)
@@ -99,8 +97,8 @@ def draw_frame(screen, state, fonts):
 
     left_score = font.render(str(state.score[0]), True, WHITE)
     right_score = font.render(str(state.score[1]), True, WHITE)
-    screen.blit(left_score, (WIDTH // 4 - left_score.get_width() // 2, 20))
-    screen.blit(right_score, (3 * WIDTH // 4 - right_score.get_width() // 2, 20))
+    screen.blit(left_score, (width // 4 - left_score.get_width() // 2, 20))
+    screen.blit(right_score, (3 * width // 4 - right_score.get_width() // 2, 20))
 
     winner = None
     if state.score[0] >= WINNING_SCORE:
@@ -110,11 +108,11 @@ def draw_frame(screen, state, fonts):
 
     if winner:
         msg = font.render(winner, True, WHITE)
-        screen.blit(msg, (WIDTH // 2 - msg.get_width() // 2, HEIGHT // 2 - 40))
+        screen.blit(msg, (width // 2 - msg.get_width() // 2, height // 2 - 40))
         restart = small_font.render("Press R to restart", True, WHITE)
-        screen.blit(restart, (WIDTH // 2 - restart.get_width() // 2, HEIGHT // 2 + 20))
+        screen.blit(restart, (width // 2 - restart.get_width() // 2, height // 2 + 20))
 
     hint = small_font.render("W/S  vs  UP/DOWN", True, (150, 150, 150))
-    screen.blit(hint, (WIDTH // 2 - hint.get_width() // 2, HEIGHT - 25))
+    screen.blit(hint, (width // 2 - hint.get_width() // 2, height - 25))
 
     pygame.display.flip()

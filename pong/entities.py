@@ -11,9 +11,7 @@ if __package__ in (None, ""):
         LEFT_PADDLE_X,
         PADDLE_HEIGHT,
         PADDLE_SPEED,
-        PADDLE_START_Y,
         PADDLE_WIDTH,
-        RIGHT_PADDLE_X,
         WIDTH,
     )
 else:
@@ -25,9 +23,7 @@ else:
         LEFT_PADDLE_X,
         PADDLE_HEIGHT,
         PADDLE_SPEED,
-        PADDLE_START_Y,
         PADDLE_WIDTH,
-        RIGHT_PADDLE_X,
         WIDTH,
     )
 
@@ -49,6 +45,8 @@ class Paddle:
 
 @dataclass
 class Ball:
+    width: int = WIDTH
+    height: int = HEIGHT
     vx: int = BALL_SPEED_X
     vy: int = BALL_SPEED_Y
     rect: pygame.Rect = field(init=False)
@@ -58,8 +56,8 @@ class Ball:
 
     def reset(self):
         self.rect = pygame.Rect(
-            WIDTH // 2 - BALL_SIZE // 2,
-            HEIGHT // 2 - BALL_SIZE // 2,
+            self.width // 2 - BALL_SIZE // 2,
+            self.height // 2 - BALL_SIZE // 2,
             BALL_SIZE,
             BALL_SIZE,
         )
@@ -69,10 +67,18 @@ class Ball:
 
 @dataclass
 class GameState:
-    left_paddle: Paddle = field(default_factory=lambda: Paddle(LEFT_PADDLE_X, PADDLE_START_Y))
-    right_paddle: Paddle = field(default_factory=lambda: Paddle(RIGHT_PADDLE_X, PADDLE_START_Y))
-    ball: Ball = field(default_factory=Ball)
+    width: int = WIDTH
+    height: int = HEIGHT
+    left_paddle: Paddle = field(init=False)
+    right_paddle: Paddle = field(init=False)
+    ball: Ball = field(init=False)
     score: list[int] = field(default_factory=lambda: [0, 0])
+
+    def __post_init__(self):
+        paddle_start_y = self.height // 2 - PADDLE_HEIGHT // 2
+        self.left_paddle = Paddle(LEFT_PADDLE_X, paddle_start_y)
+        self.right_paddle = Paddle(self.width - PADDLE_WIDTH - LEFT_PADDLE_X, paddle_start_y)
+        self.ball = Ball(self.width, self.height)
 
     def reset(self):
         self.left_paddle.reset()
