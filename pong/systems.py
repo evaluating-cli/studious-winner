@@ -164,7 +164,7 @@ def draw_frame(screen, state, fonts):
     if winner:
         msg = font.render(winner, True, WHITE)
         screen.blit(msg, (width // 2 - msg.get_width() // 2, height // 2 - 40))
-        restart = small_font.render("Press R to restart", True, WHITE)
+        restart = small_font.render("R to restart  \u00b7  Esc for menu", True, WHITE)
         screen.blit(restart, (width // 2 - restart.get_width() // 2, height // 2 + 20))
 
     hint = small_font.render("W/S  vs  UP/DOWN", True, (150, 150, 150))

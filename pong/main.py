@@ -108,8 +108,11 @@ async def run_game(screen, clock, fonts, options):
         update_scoring(state)
 
         game_over = state.score[0] >= state.winning_score or state.score[1] >= state.winning_score
-        if game_over and pressed_keys[pygame.K_r]:
-            state.reset()
+        if game_over:
+            if pressed_keys[pygame.K_r]:
+                state.reset()
+            elif pressed_keys[pygame.K_ESCAPE]:
+                running = False
 
         draw_frame(screen, state, fonts)
         await asyncio.sleep(0)
@@ -119,8 +122,10 @@ async def main():
     pygame.init()
     if sys.platform == "emscripten":
         screen = pygame.display.set_mode((0, 0), pygame.RESIZABLE)
+        from platform import window as _js_window
     else:
         screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
+        _js_window = None
     pygame.display.set_caption("Pong")
     clock = pygame.time.Clock()
     fonts = {
@@ -130,14 +135,36 @@ async def main():
 
     options = Options()
     while True:
-        result = await run_start_screen(screen, clock, fonts)
-        if not result:
-            break
-        if result == "options":
-            if not await run_options_screen(screen, clock, fonts, options):
+        if _js_window:
+            # Web: wait for the HTML Play button to signal start
+            while not _js_window.localStorage.getItem("pong_play_requested"):
+                clock.tick(10)  # low rate while idle — canvas hidden behind overlay
+                screen.fill((0, 0, 0))
+                pygame.display.flip()
+                await asyncio.sleep(0)
+            _js_window.localStorage.removeItem("pong_play_requested")
+            # Read winning score option set by the HTML overlay
+            ws = _js_window.localStorage.getItem("pong_winning_score")
+            if ws:
+                try:
+                    val = int(ws)
+                    if val in WINNING_SCORE_OPTIONS:
+                        options.winning_score = val
+                except (ValueError, TypeError):
+                    pass
+        else:
+            result = await run_start_screen(screen, clock, fonts)
+            if not result:
                 break
-            continue
+            if result == "options":
+                if not await run_options_screen(screen, clock, fonts, options):
+                    break
+                continue
+
         await run_game(screen, clock, fonts, options)
+
+        if _js_window:
+            _js_window.showOverlay()
 
 
 asyncio.run(main())

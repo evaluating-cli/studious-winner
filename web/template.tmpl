@@ -24,7 +24,7 @@ from pathlib import Path
 async def custom_site():
     import embed
 
-    platform.window.transfer.hidden = true
+    platform.window.transfer.hidden = True
     platform.window.canvas.style.visibility = "visible"
 
     bundle = "{{cookiecutter.archive}}"
@@ -254,6 +254,41 @@ function frame_online(url) {
         border-bottom: 1px solid rgba(255,255,255,0.3);
     }
 
+    .options-row {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+    }
+
+    .options-row label,
+    .options-row span {
+        opacity: 0.6;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.12em;
+    }
+
+    .options-row select {
+        background: #000;
+        color: #fff;
+        border: 1px solid rgba(255,255,255,0.4);
+        font-family: inherit;
+        font-size: 0.85rem;
+        padding: 0.25rem 0.5rem;
+        letter-spacing: 0.08em;
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        text-align: center;
+        outline: none;
+    }
+
+    .options-row select:focus {
+        border-color: #fff;
+    }
+
     #play-btn {
         margin-top: 0.5rem;
         padding: 1rem 3rem;
@@ -291,7 +326,7 @@ function frame_online(url) {
     #transfer, #pyconsole, #crt { display: none !important; }
 </style>
 
-<script src="{{cookiecutter.cdn}}/browserfs.min.js"></script>
+<script src="{{cookiecutter.cdn}}browserfs.min.js"></script>
 
 </head>
 
@@ -299,7 +334,7 @@ function frame_online(url) {
 
     <!-- Startup overlay: visible on top while the game loads in the background -->
     <div id="overlay">
-        <div class="title">PONG</div>
+        <div class="title">{{cookiecutter.title}}</div>
 
         <hr class="divider">
 
@@ -328,9 +363,20 @@ function frame_online(url) {
             </table>
         </div>
 
+        <div class="options-row">
+            <label for="winning-score-select">First to</label>
+            <select id="winning-score-select">
+                <option value="3">3</option>
+                <option value="5">5</option>
+                <option value="7" selected>7</option>
+                <option value="10">10</option>
+            </select>
+            <span>points wins</span>
+        </div>
+
         <button id="play-btn">▶ PLAY</button>
 
-        <p class="hint">First to 7 points wins &nbsp;·&nbsp; Press R to restart</p>
+        <p class="hint" id="score-hint"></p>
 
         <!-- Infobox is repurposed as a subtle loading hint inside the overlay -->
         <div id="infobox">Loading…</div>
@@ -407,7 +453,26 @@ function frame_online(url) {
         console.warn("TODO: panda3d canvas monitor", self, ecw, ech)
     }
 
+    function updateHint() {
+        const score = document.getElementById('winning-score-select').value;
+        document.getElementById('score-hint').textContent =
+            'First to ' + score + ' points wins \u00b7 W/S vs \u2191/\u2193';
+    }
+
+    window.showOverlay = function () {
+        const overlay = document.getElementById('overlay');
+        document.getElementById('infobox').style.display = 'none';
+        overlay.style.display = 'flex';
+        requestAnimationFrame(() => overlay.classList.remove('fade-out'));
+    };
+
+    document.getElementById('winning-score-select').addEventListener('change', updateHint);
+    updateHint();
+
     document.getElementById('play-btn').addEventListener('click', function () {
+        const score = document.getElementById('winning-score-select').value;
+        window.localStorage.setItem('pong_winning_score', score);
+        window.localStorage.setItem('pong_play_requested', '1');
         const overlay = document.getElementById('overlay');
         overlay.classList.add('fade-out');
         overlay.addEventListener('transitionend', function () {
