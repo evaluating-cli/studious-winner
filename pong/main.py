@@ -64,17 +64,30 @@ def draw_dashed_line(surface, color, start, end, dash_length=10):
 
 
 class GameState:
+    PLAYING = "playing"
+    GAME_OVER = "game_over"
+
     def __init__(self):
         self.left_paddle = Paddle(20, HEIGHT // 2 - PADDLE_HEIGHT // 2)
         self.right_paddle = Paddle(WIDTH - 30, HEIGHT // 2 - PADDLE_HEIGHT // 2)
         self.ball = Ball()
         self.score = [0, 0]
+        self.phase = self.PLAYING
+
+    @property
+    def winner(self):
+        if self.score[0] >= WINNING_SCORE:
+            return "Left Player Wins!"
+        if self.score[1] >= WINNING_SCORE:
+            return "Right Player Wins!"
+        return None
 
     def reset(self):
         self.left_paddle = Paddle(20, HEIGHT // 2 - PADDLE_HEIGHT // 2)
         self.right_paddle = Paddle(WIDTH - 30, HEIGHT // 2 - PADDLE_HEIGHT // 2)
         self.ball.reset()
         self.score = [0, 0]
+        self.phase = self.PLAYING
 
 
 pygame.init()
@@ -96,26 +109,34 @@ async def main():
             if event.type == pygame.QUIT:
                 running = False
 
-        state.left_paddle.move(pygame.K_w, pygame.K_s)
-        state.right_paddle.move(pygame.K_UP, pygame.K_DOWN)
+        if state.phase == GameState.PLAYING:
+            state.left_paddle.move(pygame.K_w, pygame.K_s)
+            state.right_paddle.move(pygame.K_UP, pygame.K_DOWN)
 
-        state.ball.move()
+            state.ball.move()
 
-        # Ball collision with paddles — push ball outside paddle to prevent tunnelling
-        if state.ball.rect.colliderect(state.left_paddle.rect) and state.ball.vx < 0:
-            state.ball.rect.left = state.left_paddle.rect.right
-            state.ball.vx = -state.ball.vx
-        if state.ball.rect.colliderect(state.right_paddle.rect) and state.ball.vx > 0:
-            state.ball.rect.right = state.right_paddle.rect.left
-            state.ball.vx = -state.ball.vx
+            # Ball collision with paddles — push ball outside paddle to prevent tunnelling
+            if state.ball.rect.colliderect(state.left_paddle.rect) and state.ball.vx < 0:
+                state.ball.rect.left = state.left_paddle.rect.right
+                state.ball.vx = -state.ball.vx
+            if state.ball.rect.colliderect(state.right_paddle.rect) and state.ball.vx > 0:
+                state.ball.rect.right = state.right_paddle.rect.left
+                state.ball.vx = -state.ball.vx
 
-        # Scoring
-        if state.ball.rect.left <= 0:
-            state.score[1] += 1
-            state.ball.reset()
-        elif state.ball.rect.right >= WIDTH:
-            state.score[0] += 1
-            state.ball.reset()
+            # Scoring
+            if state.ball.rect.left <= 0:
+                state.score[1] += 1
+                state.ball.reset()
+            elif state.ball.rect.right >= WIDTH:
+                state.score[0] += 1
+                state.ball.reset()
+
+            if state.winner:
+                state.phase = GameState.GAME_OVER
+        else:
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_r]:
+                state.reset()
 
         # Draw center line
         draw_dashed_line(screen, WHITE, (WIDTH // 2, 0), (WIDTH // 2, HEIGHT))
@@ -131,21 +152,12 @@ async def main():
         screen.blit(left_score, (WIDTH // 4 - left_score.get_width() // 2, 20))
         screen.blit(right_score, (3 * WIDTH // 4 - right_score.get_width() // 2, 20))
 
-        # Win condition
-        winner = None
-        if state.score[0] >= WINNING_SCORE:
-            winner = "Left Player Wins!"
-        elif state.score[1] >= WINNING_SCORE:
-            winner = "Right Player Wins!"
-
-        if winner:
-            msg = font.render(winner, True, WHITE)
+        # Win screen
+        if state.phase == GameState.GAME_OVER and state.winner:
+            msg = font.render(state.winner, True, WHITE)
             screen.blit(msg, (WIDTH // 2 - msg.get_width() // 2, HEIGHT // 2 - 40))
             restart = small_font.render("Press R to restart", True, WHITE)
             screen.blit(restart, (WIDTH // 2 - restart.get_width() // 2, HEIGHT // 2 + 20))
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_r]:
-                state.reset()
 
         # Controls hint
         hint = small_font.render("W/S  vs  UP/DOWN", True, (150, 150, 150))
