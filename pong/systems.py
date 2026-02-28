@@ -94,9 +94,6 @@ def draw_start_screen(screen, fonts):
         surf = small_font.render(line, True, debug_color)
         screen.blit(surf, (4, height - (len(debug_lines) - i) * debug_line_height))
 
-    pygame.display.flip()
-
-
 def draw_options_screen(screen, fonts, options, selected_index):
     font = fonts["font"]
     small_font = fonts["small_font"]
@@ -121,9 +118,6 @@ def draw_options_screen(screen, fonts, options, selected_index):
 
     hint = small_font.render("UP/DOWN select   LEFT/RIGHT change   ESC confirm", True, (100, 100, 100))
     screen.blit(hint, (width // 2 - hint.get_width() // 2, height - 30))
-
-    pygame.display.flip()
-
 
 def draw_frame(screen, state, fonts):
     font = fonts["font"]
@@ -157,5 +151,3 @@ def draw_frame(screen, state, fonts):
 
     hint = small_font.render("W/S  vs  UP/DOWN", True, (150, 150, 150))
     screen.blit(hint, (width // 2 - hint.get_width() // 2, height - 25))
-
-    pygame.display.flip()

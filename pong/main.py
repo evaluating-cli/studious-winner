@@ -30,6 +30,7 @@ async def run_start_screen(screen, clock, fonts):
                 if event.key == pygame.K_o:
                     return "options"
         draw_start_screen(screen, fonts)
+        pygame.display.flip()
         await asyncio.sleep(0)
 
 
@@ -63,6 +64,7 @@ async def run_options_screen(screen, clock, fonts, options):
                     elif selected == 2:
                         options.paddle_speed_per_frame = _cycle_option(SPEED_OPTIONS, options.paddle_speed_per_frame, delta, 1)
         draw_options_screen(screen, fonts, options, selected)
+        pygame.display.flip()
         await asyncio.sleep(0)
     return True
 
@@ -94,6 +96,7 @@ async def run_game(screen, clock, fonts, options):
                 running = False
 
         draw_frame(screen, state, fonts)
+        pygame.display.flip()
         await asyncio.sleep(0)
 
 
