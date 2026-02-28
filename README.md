@@ -6,6 +6,14 @@ A two-player Pong game built with Python and Pygame, compiled for the web using 
 
 **https://evaluating-cli.github.io/studious-winner/**
 
+## Run locally
+
+Use a single package-based entry point:
+
+```bash
+python -m pong.main
+```
+
 ## Deployment
 
 Every push to the `main` branch uses an **auto-deploy** GitHub Actions workflow: [Deploy Pong to GitHub Pages](.github/workflows/deploy.yml). There is **no manual build** or deploy step needed.
