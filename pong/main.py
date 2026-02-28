@@ -81,19 +81,30 @@ def draw_dashed_line(surface, color, start, end, dash_length=10):
 
 
 class GameState:
-    def __init__(self, width, height):
-        self.width = width
-        self.height = height
-        self.left_paddle = Paddle(20, height // 2 - PADDLE_HEIGHT // 2)
-        self.right_paddle = Paddle(width - 30, height // 2 - PADDLE_HEIGHT // 2)
-        self.ball = Ball(width, height)
+    PLAYING = "playing"
+    GAME_OVER = "game_over"
+
+    def __init__(self):
+        self.left_paddle = Paddle(20, HEIGHT // 2 - PADDLE_HEIGHT // 2)
+        self.right_paddle = Paddle(WIDTH - 30, HEIGHT // 2 - PADDLE_HEIGHT // 2)
+        self.ball = Ball()
         self.score = [0, 0]
+        self.phase = self.PLAYING
+
+    @property
+    def winner(self):
+        if self.score[0] >= WINNING_SCORE:
+            return "Left Player Wins!"
+        if self.score[1] >= WINNING_SCORE:
+            return "Right Player Wins!"
+        return None
 
     def reset(self):
         self.left_paddle = Paddle(20, self.height // 2 - PADDLE_HEIGHT // 2)
         self.right_paddle = Paddle(self.width - 30, self.height // 2 - PADDLE_HEIGHT // 2)
         self.ball.reset()
         self.score = [0, 0]
+        self.phase = self.PLAYING
 
 
 def draw_menu(surface, width, height, font_obj, small_font_obj):
@@ -139,6 +150,10 @@ async def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+
+        if state.phase == GameState.PLAYING:
+            state.left_paddle.move(pygame.K_w, pygame.K_s)
+            state.right_paddle.move(pygame.K_UP, pygame.K_DOWN)
             elif event.type == pygame.KEYDOWN:
                 if phase == PHASE_MENU:
                     if event.key == pygame.K_RETURN:
@@ -182,6 +197,41 @@ async def main():
             if state.ball.rect.left <= 0:
                 state.score[1] += 1
                 state.ball.reset()
+            elif state.ball.rect.right >= WIDTH:
+                state.score[0] += 1
+                state.ball.reset()
+
+            if state.winner:
+                state.phase = GameState.GAME_OVER
+        else:
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_r]:
+                state.reset()
+
+        # Draw center line
+        draw_dashed_line(screen, WHITE, (WIDTH // 2, 0), (WIDTH // 2, HEIGHT))
+
+        # Draw paddles and ball
+        state.left_paddle.draw(screen)
+        state.right_paddle.draw(screen)
+        state.ball.draw(screen)
+
+        # Draw scores
+        left_score = font.render(str(state.score[0]), True, WHITE)
+        right_score = font.render(str(state.score[1]), True, WHITE)
+        screen.blit(left_score, (WIDTH // 4 - left_score.get_width() // 2, 20))
+        screen.blit(right_score, (3 * WIDTH // 4 - right_score.get_width() // 2, 20))
+
+        # Win screen
+        if state.phase == GameState.GAME_OVER and state.winner:
+            msg = font.render(state.winner, True, WHITE)
+            screen.blit(msg, (WIDTH // 2 - msg.get_width() // 2, HEIGHT // 2 - 40))
+            restart = small_font.render("Press R to restart", True, WHITE)
+            screen.blit(restart, (WIDTH // 2 - restart.get_width() // 2, HEIGHT // 2 + 20))
+
+        # Controls hint
+        hint = small_font.render("W/S  vs  UP/DOWN", True, (150, 150, 150))
+        screen.blit(hint, (WIDTH // 2 - hint.get_width() // 2, HEIGHT - 25))
             elif state.ball.rect.right >= state.width:
                 state.score[0] += 1
                 state.ball.reset()
