@@ -94,6 +94,9 @@ class Ball:
 
 @dataclass
 class GameState:
+    PLAYING = "playing"
+    GAME_OVER = "game_over"
+
     width: int
     height: int
     left_paddle: Paddle = field(init=False)
@@ -106,6 +109,15 @@ class GameState:
         self.left_paddle = Paddle(20, paddle_start_y)
         self.right_paddle = Paddle(self.width - 30, paddle_start_y)
         self.ball = Ball(self.width, self.height)
+        self.phase = self.PLAYING
+
+    @property
+    def winner(self):
+        if self.score[0] >= WINNING_SCORE:
+            return "Left Player Wins!"
+        if self.score[1] >= WINNING_SCORE:
+            return "Right Player Wins!"
+        return None
 
     def reset(self):
         self.left_paddle.reset()
@@ -114,6 +126,74 @@ class GameState:
         self.ball.height = self.height
         self.ball.reset()
         self.score = [0, 0]
+        self.phase = self.PLAYING
+
+    def apply_display_size(self, width: int, height: int):
+        self.width = width
+        self.height = height
+
+        paddle_start_y = self.height // 2 - PADDLE_HEIGHT // 2
+        self.left_paddle.y = paddle_start_y
+        self.right_paddle.y = paddle_start_y
+        self.right_paddle.x = self.width - 30
+        self.right_paddle.rect.x = self.right_paddle.x
+
+        self.left_paddle.rect.y = max(0, min(self.left_paddle.rect.y, self.height - self.left_paddle.rect.height))
+        self.right_paddle.rect.y = max(0, min(self.right_paddle.rect.y, self.height - self.right_paddle.rect.height))
+
+        self.ball.width = self.width
+        self.ball.height = self.height
+        self.ball.rect.clamp_ip(pygame.Rect(0, 0, self.width, self.height))
+
+
+def _sync_web_canvas_after_mode_switch(screen):
+    """Keep pygbag canvas size in sync after pygame.display.set_mode()."""
+    if sys.platform != "emscripten":
+        return
+
+    resize_hook = getattr(pygame.display, "_resize_event", None)
+    if callable(resize_hook):
+        resize_hook()
+    else:
+        # Fallback for environments without a bridge hook.
+        screen.fill(BLACK)
+        pygame.display.flip()
+
+
+def _get_fullscreen_target_size(default_width: int, default_height: int) -> tuple[int, int]:
+    get_desktop_sizes = getattr(pygame.display, "get_desktop_sizes", None)
+    if callable(get_desktop_sizes):
+        desktop_sizes = get_desktop_sizes()
+        if desktop_sizes:
+            return desktop_sizes[0]
+
+    info = pygame.display.Info()
+    if info.current_w > 0 and info.current_h > 0:
+        return info.current_w, info.current_h
+
+    current_surface = pygame.display.get_surface()
+    if current_surface is not None:
+        return current_surface.get_size()
+
+    return default_width, default_height
+
+
+def apply_display_mode(options: Options, state: GameState | None = None):
+    if options.fullscreen:
+        target_width, target_height = _get_fullscreen_target_size(options.width, HEIGHT)
+        flags = pygame.RESIZABLE
+    else:
+        target_width, target_height = options.width, HEIGHT
+        flags = 0
+
+    screen = pygame.display.set_mode((target_width, target_height), flags)
+    active_width, active_height = screen.get_size()
+
+    if state is not None:
+        state.apply_display_size(active_width, active_height)
+
+    _sync_web_canvas_after_mode_switch(screen)
+    return screen
 
     def apply_display_size(self, width: int, height: int):
         self.width = width
@@ -253,14 +333,8 @@ def draw_playing(screen, state, font, small_font):
     screen.blit(left_score, (width // 4 - left_score.get_width() // 2, 20))
     screen.blit(right_score, (3 * width // 4 - right_score.get_width() // 2, 20))
 
-    winner = None
-    if state.score[0] >= WINNING_SCORE:
-        winner = "Left Player Wins!"
-    elif state.score[1] >= WINNING_SCORE:
-        winner = "Right Player Wins!"
-
-    if winner:
-        msg = font.render(winner, True, WHITE)
+    if state.phase == GameState.GAME_OVER and state.winner:
+        msg = font.render(state.winner, True, WHITE)
         screen.blit(msg, (width // 2 - msg.get_width() // 2, height // 2 - 40))
         restart = small_font.render("Press R to restart", True, WHITE)
         screen.blit(restart, (width // 2 - restart.get_width() // 2, height // 2 + 20))
@@ -345,13 +419,15 @@ async def main():
                         state = None
 
         if phase == PHASE_PLAYING and state is not None:
-            pressed_keys = pygame.key.get_pressed()
-            winner = state.score[0] >= WINNING_SCORE or state.score[1] >= WINNING_SCORE
-
-            if not winner:
+            if state.phase == GameState.PLAYING:
+                pressed_keys = pygame.key.get_pressed()
                 update_gameplay(state, pressed_keys)
-            elif pressed_keys[pygame.K_r]:
-                state.reset()
+                if state.winner:
+                    state.phase = GameState.GAME_OVER
+            elif state.phase == GameState.GAME_OVER:
+                pressed_keys = pygame.key.get_pressed()
+                if pressed_keys[pygame.K_r]:
+                    state.reset()
 
             draw_playing(screen, state, font, small_font)
         elif phase == PHASE_MENU:
