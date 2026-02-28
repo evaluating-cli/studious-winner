@@ -4,16 +4,7 @@ A two-player Pong game built with Python and Pygame, compiled for the web using 
 
 ## Play
 
-The game has a **live demo** on GitHub Pages — play it here: **https://evaluating-cli.github.io/studious-winner/**
-
-## Controls
-
-| Player | Move Up | Move Down |
-|--------|---------|-----------|
-| Left   | `W`     | `S`       |
-| Right  | `↑`     | `↓`       |
-
-First player to reach **7 points** wins. Press **R** to restart after a game ends.
+**https://evaluating-cli.github.io/studious-winner/**
 
 ## Deployment
 
