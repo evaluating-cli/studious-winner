@@ -28,16 +28,3 @@ The workflow runs the following steps:
 5. **Add .nojekyll** – adds a `.nojekyll` file so GitHub Pages serves the files as-is.
 6. **Upload artifact** – packages the `pong/build/web/` directory as a Pages artifact.
 7. **Deploy** – publishes the artifact to GitHub Pages, making the game available at https://evaluating-cli.github.io/studious-winner/.
-
-
-## Display Mode Regression Checklist
-
-Manual QA path for web builds (pygbag output):
-
-1. Launch the web build — the canvas should fill the entire browser window.
-2. Resize the browser window and confirm the canvas adapts to the new dimensions.
-3. Press **ENTER** to start gameplay and verify:
-   - paddles and ball stay within visible bounds,
-   - scoring still triggers at left/right edges,
-   - center line, scores, and win banner remain centered.
-4. Press **R** to restart after a game ends and confirm the game resets correctly.
